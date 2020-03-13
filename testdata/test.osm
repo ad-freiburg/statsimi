@@ -1,0 +1,104 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osm version="0.6" generator="osmfilter 1.4.4">
+	<bounds minlat="47.9285939" minlon="7.713899" maxlat="48.075549" maxlon="7.973421"/>
+	<node id="25237964" lat="47.9908256" lon="7.8533399">
+		<tag k="bus" v="yes"/>
+		<tag k="bus_stop:category" v="C"/>
+		<tag k="interval" v="irregular"/>
+		<tag k="local_ref" v="3"/>
+		<tag k="name" v="Schwabentorbrücke"/>
+		<tag k="operator" v="Südbadenbus GmbH"/>
+		<tag k="public_transport" v="stop_position"/>
+		<tag k="ref:RVF" v="298703"/>
+		<tag k="uic_name" v="Schwabentorbrücke, Freiburg im Breisgau"/>
+		<tag k="uic_ref" v="808101"/>
+	</node>
+	<node id="248609020" lat="47.9905784" lon="7.8548107">
+		<tag k="name" v="Schwabentorbrücke"/>
+		<tag k="operator" v="Freiburger Verkehrs AG"/>
+		<tag k="public_transport" v="stop_position"/>
+		<tag k="ref:IBNR" v="DE:808101"/>
+		<tag k="tram" v="yes"/>
+		<tag k="uic_name" v="Schwabentorbrücke, Freiburg im Breisgau"/>
+		<tag k="uic_ref" v="808101"/>
+		<tag k="wheelchair" v="yes"/>
+	</node>
+	<node id="248609028" lat="47.9907312" lon="7.8542707">
+		<tag k="name" v="Schwabentorbrücke"/>
+		<tag k="operator" v="Freiburger Verkehrs AG"/>
+		<tag k="public_transport" v="stop_position"/>
+		<tag k="ref:IBNR" v="DE:808101"/>
+		<tag k="tram" v="yes"/>
+		<tag k="uic_name" v="Schwabentorbrücke, Freiburg im Breisgau"/>
+		<tag k="uic_ref" v="808101"/>
+		<tag k="wheelchair" v="yes"/>
+	</node>
+	<node id="507039988" lat="47.9902825" lon="7.8533538">
+		<tag k="bus" v="yes"/>
+		<tag k="bus_stop:category" v="C"/>
+		<tag k="interval" v="irregular"/>
+		<tag k="local_ref" v="4"/>
+		<tag k="name" v="Schwabentorbrücke"/>
+		<tag k="operator" v="Südbadenbus GmbH"/>
+		<tag k="public_transport" v="stop_position"/>
+		<tag k="ref:RVF" v="298704"/>
+		<tag k="uic_name" v="Schwabentorbrücke, Freiburg im Breisgau"/>
+		<tag k="uic_ref" v="808101"/>
+		<tag k="wheelchair" v="yes"/>
+	</node>
+	<node id="2496897173" lat="47.9908618" lon="7.8533084">
+		<tag k="bus" v="yes"/>
+		<tag k="highway" v="bus_stop"/>
+		<tag k="interval" v="irregular"/>
+		<tag k="local_ref" v="3"/>
+		<tag k="name" v="Schwabentorbrücke"/>
+		<tag k="network" v="RVF"/>
+		<tag k="operator" v="Südbadenbus GmbH"/>
+		<tag k="public_transport" v="platform"/>
+		<tag k="ref" v="3"/>
+		<tag k="ref:RVF" v="298703"/>
+		<tag k="shelter" v="no"/>
+		<tag k="tactile_paving" v="no"/>
+		<tag k="uic_name" v="Schwabentorbrücke, Freiburg im Breisgau"/>
+		<tag k="uic_ref" v="808101"/>
+	</node>
+	<node id="4984926391" lat="47.9906713" lon="7.8544974">
+		<tag k="name" v="Schwabentorbrücke"/>
+		<tag k="railway" v="tram_stop"/>
+		<tag k="wheelchair" v="limited"/>
+	</node>
+	<node id="2496897172" lat="47.9902196" lon="7.8534057">
+		<tag k="bus" v="yes"/>
+		<tag k="highway" v="bus_stop"/>
+		<tag k="interval" v="irregular"/>
+		<tag k="local_ref" v="4"/>
+		<tag k="name" v="Schwabentorbrücke"/>
+		<tag k="network" v="RVF"/>
+		<tag k="operator" v="Südbadenbus GmbH"/>
+		<tag k="public_transport" v="platform"/>
+		<tag k="ref" v="4"/>
+		<tag k="ref:RVF" v="298704"/>
+		<tag k="shelter" v="no"/>
+		<tag k="tactile_paving" v="no"/>
+		<tag k="uic_name" v="Schwabentorbrücke, Freiburg im Breisgau"/>
+		<tag k="uic_ref" v="808101"/>
+		<tag k="wheelchair" v="yes"/>
+	</node>
+	<relation id="3271923">
+		<member type="node" ref="248609020" role="stop"/>
+		<member type="node" ref="248609028" role="stop"/>
+		<member type="node" ref="2496897173" role="platform"/>
+		<member type="node" ref="25237964" role="stop"/>
+		<member type="node" ref="507039988" role="stop"/>
+		<member type="node" ref="2496897172" role="platform"/>
+		<tag k="bus" v="yes"/>
+		<tag k="name" v="Schwabentorbrücke"/>
+		<tag k="tram" v="yes"/>
+		<tag k="type" v="public_transport"/>
+		<tag k="uic_ref" v="808101"/>
+		<tag k="operator" v="GuT Freiburg"/>
+		<tag k="ref:IBNR" v="DE:808101"/>
+		<tag k="public_transport" v="stop_area"/>
+		<tag k="bus_stop:category" v="C"/>
+	</relation>
+</osm>

@@ -1,0 +1,5 @@
+wheel
+sklearn
+matplotlib
+numpy>=1.12.0
+scipy
