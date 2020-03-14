@@ -179,24 +179,19 @@ class OsmParser(object):
             event, root = next(context)
 
             i = 0
-            lvl = 0
 
             self.log.info("First pass, parsing relations...")
             for event, c1 in context:
                 if event == "start":
-                    lvl = lvl + 1
                     continue
-
-                lvl = lvl - 1
 
                 i = i + 1
 
                 perc = int((f.tell() / f_size) * 100)
                 if perc - perc_last >= 10:
                     perc_last = perc
-                    self.log.info("@ %d%% (%d/%d)" % (perc, f.tell(), f_size))
-                if nd_end == f_size and lvl == 1 and c1.tag != "node" \
-                        and c1.tag != "bounds":
+                    self.log.info("@ %d%%" % (perc))
+                if nd_end == f_size and c1.tag == "way":
                     nd_end = f.tell()
 
                 if c1.tag != "relation":
@@ -270,28 +265,25 @@ class OsmParser(object):
             event, root = next(context)
 
             i = 0
-            lvl = 0
 
             for event, c1 in context:
                 if event == "start":
-                    lvl = lvl + 1
                     continue
 
                 i = i + 1
-                lvl = lvl - 1
 
                 perc = int((f.tell() / nd_end) * 100)
                 if perc - perc_last >= 10:
                     perc_last = perc
-                    self.log.info("@ %d%% (%d/%d)" % (perc, f.tell(), nd_end))
+                    self.log.info("@ %d%%" % (perc))
+
+                if c1.tag == "way" or c1.tag == "relation":
+                    break
 
                 if c1.tag != "node":
                     if i % BUFFER == 0:
                         root.clear()
                     continue
-
-                if c1.tag == "way" or c1.tag == "relation":
-                    break
 
                 nid = int(c1.attrib["id"])
                 lat = float(c1.attrib["lat"])
