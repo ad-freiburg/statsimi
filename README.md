@@ -1,4 +1,4 @@
-# staty
+# statsimi
 
 **Work in progress, without any warranty**
 
@@ -17,8 +17,8 @@ Framework for station similarity classification.
 Fetch this repository and init submodules:
 
 ```
-git clone --recurse-submodules https://github.com/ad-freiburg/staty
-cd staty
+git clone --recurse-submodules https://github.com/ad-freiburg/statsimi
+cd statsimi
 ```
 Create virtual environment
 ```
@@ -38,13 +38,13 @@ Build a classification model `classify.mod` for Germany (uses a random 20% of th
 ```
 wget https://download.geofabrik.de/europe/germany-latest.osm.bz2
 bunzip2 germany-latest.osm.bz2
-python3 staty.py model --model_out classify.mod --train germany-latest.osm
+python3 statsimi.py model --model_out classify.mod --train germany-latest.osm
 ```
 
 Write a fix file `germany.fix` for `germany.osm` based on the previously build model:
 
 ```
-python3 staty.py fix --model classify.mod --fix_out germany.fix --test germany-latest.osm
+python3 statsimi.py fix --model classify.mod --fix_out germany.fix --test germany-latest.osm
 ```
 
 
@@ -52,7 +52,7 @@ python3 staty.py fix --model classify.mod --fix_out germany.fix --test germany-l
 
 # General Usage
 
-`staty` can be used to train and output a reusable classification model, to start a classification HTTP server or to evaluate methods against some dataset.
+`statsimi` can be used to train and output a reusable classification model, to start a classification HTTP server or to evaluate methods against some dataset.
 
 The following basic commands are supported:
 
@@ -64,12 +64,12 @@ The following basic commands are supported:
 
 ## Train a model
 ```
-python3 staty.py model --train <train_input> -p <train_perc> --model_out <file> --method <method>
+python3 statsimi.py model --train <train_input> -p <train_perc> --model_out <file> --method <method>
 ```
 
 ## Evaluate a model
 ```
-python3 staty.py model --train <train_input> -p <train_perc> --model_out <file> --method <method>
+python3 statsimi.py model --train <train_input> -p <train_perc> --model_out <file> --method <method>
 ```
 
 TODO

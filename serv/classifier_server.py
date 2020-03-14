@@ -92,7 +92,7 @@ class ClassifierServer(object):
 
     def run(self):
         hndl = makeHandler(self.fb, self.model, self.log)
-        hndl.server_version = "staty"
+        hndl.server_version = "statsimi"
         hndl.sys_version = ""
         httpd = HTTPServer((HOST_NAME, self.port), hndl)
 
