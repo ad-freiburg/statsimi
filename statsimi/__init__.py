@@ -5,12 +5,12 @@ Chair of Algorithms and Data Structures.
 Patrick Brosi <brosi@informatik.uni-freiburg.de>
 '''
 
-from serv.classifier_server import ClassifierServer
-from evaluate.param_evaluator import ParamEvaluator
-from evaluate.evaluator import Evaluator
-from osm.osm_fixer import OsmFixer
-from feature.feature_builder import FeatureBuilder
-from feature.model_builder import ModelBuilder
+from .serv.classifier_server import ClassifierServer
+from .evaluate.param_evaluator import ParamEvaluator
+from .evaluate.evaluator import Evaluator
+from .osm.osm_fixer import OsmFixer
+from .feature.feature_builder import FeatureBuilder
+from .feature.model_builder import ModelBuilder
 import pickle
 import argparse
 import logging
@@ -25,7 +25,7 @@ class ArgFormat(argparse.ArgumentDefaultsHelpFormatter,
 
 def main():
     parser = argparse.ArgumentParser(
-        prog="staty",
+        prog="statsimi",
         formatter_class=ArgFormat,
 
         description="(C) 2019 University of Freiburg\nChair of "

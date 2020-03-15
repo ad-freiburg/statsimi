@@ -1,6 +1,6 @@
 NORM_FILE := ""
 
-BASE_CMD := python3 -OOu statsimi.py --norm_file=$(NORM_FILE)
+BASE_CMD := statsimi --norm_file=$(NORM_FILE)
 CUTOFFDIST := 1000
 
 # probability a station is spiced

@@ -1,4 +1,5 @@
 # hand-written normalization rules for station name normalization
+# used for comparison during evaluation
 
 , -> ' ';
 ; -> ' ';

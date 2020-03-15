@@ -9,25 +9,25 @@ import logging
 import numpy as np
 import math
 
-from osm.osm_parser import OsmParser
-from feature.feature_builder import FeatureBuilder
+from statsimi.osm.osm_parser import OsmParser
+from statsimi.feature.feature_builder import FeatureBuilder
 
-from classifiers.geodist_classifier import GeoDistClassifier
-from classifiers.ed_classifier import EditDistClassifier
-from classifiers.ped_classifier import PrefixEditDistClassifier
-from classifiers.sed_classifier import SuffixEditDistClassifier
-from classifiers.bts_classifier import BTSClassifier
-from classifiers.jaro_classifier import JaroClassifier
-from classifiers.jarowinkler_classifier import JaroWinklerClassifier
-from classifiers.tfidf_classifier import TFIDFClassifier
-from classifiers.jaccard_classifier import JaccardClassifier
-from classifiers.soft_vote_classifier import SoftVoteClassifier
-from classifiers.hard_vote_classifier import HardVoteClassifier
-from feature.stat_ident import StatIdent
+from statsimi.classifiers.geodist_classifier import GeoDistClassifier
+from statsimi.classifiers.ed_classifier import EditDistClassifier
+from statsimi.classifiers.ped_classifier import PrefixEditDistClassifier
+from statsimi.classifiers.sed_classifier import SuffixEditDistClassifier
+from statsimi.classifiers.bts_classifier import BTSClassifier
+from statsimi.classifiers.jaro_classifier import JaroClassifier
+from statsimi.classifiers.jarowinkler_classifier import JaroWinklerClassifier
+from statsimi.classifiers.tfidf_classifier import TFIDFClassifier
+from statsimi.classifiers.jaccard_classifier import JaccardClassifier
+from statsimi.classifiers.soft_vote_classifier import SoftVoteClassifier
+from statsimi.classifiers.hard_vote_classifier import HardVoteClassifier
+from statsimi.feature.stat_ident import StatIdent
 
-from util.util import pick_args
+from statsimi.util.util import pick_args
 
-from normalization.normalizer import Normalizer
+from statsimi.normalization.normalizer import Normalizer
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression

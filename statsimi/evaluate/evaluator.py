@@ -6,9 +6,9 @@ Patrick Brosi <brosi@informatik.uni-freiburg.de>
 '''
 
 import numpy as np
-from util.util import print_confusion_matrix
-from util.util import print_classification_report
-from util.util import pick_args
+from statsimi.util.util import print_confusion_matrix
+from statsimi.util.util import print_classification_report
+from statsimi.util.util import pick_args
 from sklearn.metrics import confusion_matrix
 
 

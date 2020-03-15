@@ -13,12 +13,12 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
 from sklearn.metrics import f1_score
-from feature.model_builder import ModelBuilder
-from util.util import print_classification_report
+from statsimi.feature.model_builder import ModelBuilder
+from statsimi.util.util import print_classification_report
 from matplotlib.ticker import (
     MultipleLocator,
     AutoMinorLocator)
-from util.util import pick_args
+from statsimi.util.util import pick_args
 import logging
 
 

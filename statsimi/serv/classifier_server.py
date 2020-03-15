@@ -7,9 +7,9 @@ Patrick Brosi <brosi@informatik.uni-freiburg.de>
 
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib import parse
-from util.util import hav
+from statsimi.util.util import hav
 import logging
-from feature.stat_ident import StatIdent
+from statsimi.feature.stat_ident import StatIdent
 
 HOST_NAME = '0.0.0.0'
 

@@ -25,10 +25,9 @@ Create virtual environment
 python3 -m venv venv
 source venv/bin/activate
 ```
-Build dependencies
+Build & Install
 ```
-pip3 install -r requirements.txt
-make install
+pip install .
 ```
 
 # Quickstart
@@ -38,13 +37,13 @@ Build a classification model `classify.mod` for Germany (uses a random 20% of th
 ```
 wget https://download.geofabrik.de/europe/germany-latest.osm.bz2
 bunzip2 germany-latest.osm.bz2
-python3 statsimi.py model --model_out classify.mod --train germany-latest.osm
+statsimi model --model_out classify.mod --train germany-latest.osm
 ```
 
-Write a fix file `germany.fix` for `germany.osm` based on the previously build model:
+Write a fix file `germany.fix` for `germany-latest.osm` based on the previously build model:
 
 ```
-python3 statsimi.py fix --model classify.mod --fix_out germany.fix --test germany-latest.osm
+statsimi fix --model classify.mod --fix_out germany.fix --test germany-latest.osm
 ```
 
 
@@ -64,12 +63,48 @@ The following basic commands are supported:
 
 ## Train a model
 ```
-python3 statsimi.py model --train <train_input> -p <train_perc> --model_out <file> --method <method>
+statsimi model --train <train_input> -p <train_perc> --model_out <model_file> --method <method>
 ```
+where `method` may be one of those listed in `statsimi --help`.
+
+## Classification server
+Using a previously trained model, a classification HTTP server can be started like this:
+```
+statsimi http --model <model_file> --http_port <port>
+```
+
+A typical request then looks like this:
+```
+http://localhost:8282/?name1=Bertoldsbrunnen&lat1=47.995662&lon1=7.846041&name2=Freiburg,%20Bertoldsbrunnen&lat2=47.995321&lon2=7.846341
+```
+
+The answer will be
+
+```
+{"res": 1}
+```
+if the two stations are similar, or
+```
+{"res": 0}
+```
+if they are not similar.
 
 ## Evaluate a model
+
+To evaluate a model against a ground truth, use
+
 ```
-python3 statsimi.py model --train <train_input> -p <train_perc> --model_out <file> --method <method>
+statsimi evaluate --model <model_file> --test <osm_data>
 ```
 
-TODO
+where `<model_file>` is a pre-trained model and `<osm_data>` is a OSM file (the ground truth data). `statsimi` will output precision, recall, F1 score, a confusion matrix and typical true positives, true negatives, false positives and false negatives.
+
+## Fix OSM data
+
+To fix OSM data, use
+
+```
+statsimi fix --model <model_file> --test <osm_data> --fix_out <fix_file>
+```
+
+where `<model_file>` is a pre-trained model and `<osm_data>` is an OSM file containing the data to be fixed. `statsimi` will analyze the input OSM data and output suggestions to stdout as well as into a file `<fix_file>` in a machine readable format (TODO: documentation of this format).

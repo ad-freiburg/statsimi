@@ -8,8 +8,8 @@ Patrick Brosi <brosi@informatik.uni-freiburg.de>
 import xml.etree.ElementTree as ET
 import math
 import os
-from feature.stat_ident import StatIdent
-from feature.stat_group import StatGroup
+from statsimi.feature.stat_ident import StatIdent
+from statsimi.feature.stat_group import StatGroup
 import logging
 
 st_filter = [

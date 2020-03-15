@@ -5,7 +5,7 @@ Chair of Algorithms and Data Structures.
 Patrick Brosi <brosi@informatik.uni-freiburg.de>
 '''
 
-from feature.stat_group import StatGroup
+from statsimi.feature.stat_group import StatGroup
 import logging
 
 
