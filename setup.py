@@ -19,6 +19,7 @@ setup(
     long_description=DESC,
     long_description_content_type='text/markdown',
     packages=find_packages(),
+    license='GPLv3',
     test_suite="statsimi.test_doctests",
     ext_modules=[cutil],
     install_requires=install_requires,
