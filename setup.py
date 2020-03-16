@@ -18,6 +18,7 @@ setup(
     url="https://github.com/ad-freiburg/statsimi",
     long_description=DESC,
     long_description_content_type='text/markdown',
+    version='0.0.1',
     packages=find_packages(),
     license='GPLv3',
     test_suite="statsimi.test_doctests",
