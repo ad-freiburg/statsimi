@@ -79,16 +79,16 @@ def jaro_winkler_simi(s, t):
     >>> '%.2f' % jaro_winkler_simi("Hauptbahnhof", "Freiburg Hauptbahnhof")
     '0.77'
     '''
-    l = 0
+    k = 0
     for i in range(0, min(len(s), len(t), 4)):
         if s[i] != t[i]:
             break
-        l += 1
+        k += 1
     j = cutil.jaro(s, t)
 
     # is usually set to 0.1
     p = 0.1
-    return j + l * p * (1 - j)
+    return j + k * p * (1 - j)
 
 
 def ed(s, t):

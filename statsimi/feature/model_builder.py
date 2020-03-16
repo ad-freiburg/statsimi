@@ -178,8 +178,8 @@ class ModelBuilder(object):
 
     def file_type(self, path):
         with open(path, 'r') as f:
-            l = f.readline()
-            if len(l.split("\t")) == 9:
+            line = f.readline()
+            if len(line.split("\t")) == 9:
                 return "pfile"
         return "osm"
 
@@ -190,18 +190,18 @@ class ModelBuilder(object):
         ur = [-math.inf, -math.inf]
 
         with open(path, 'r') as f:
-            for l in f:
-                l = l.split("\t")
+            for line in f:
+                lparts = line.split("\t")
 
-                sid1 = int(l[0])
-                sname1 = l[1]
-                lat1 = float(l[2])
-                lon1 = float(l[3])
+                sid1 = int(lparts[0])
+                sname1 = lparts[1]
+                lat1 = float(lparts[2])
+                lon1 = float(lparts[3])
 
-                sid2 = int(l[4])
-                sname2 = l[5]
-                lat2 = float(l[6])
-                lon2 = float(l[7])
+                sid2 = int(lparts[4])
+                sname2 = lparts[5]
+                lat2 = float(lparts[6])
+                lon2 = float(lparts[7])
 
                 if lat1 < ll[0]:
                     ll[0] = lat1
@@ -221,7 +221,7 @@ class ModelBuilder(object):
                 if lon2 > ur[1]:
                     ur[1] = lon2
 
-                match = l[8].strip() == '1'
+                match = lparts[8].strip() == '1'
 
                 if sid1 not in stats:
                     stats[sid1] = (

@@ -27,12 +27,12 @@ class Normalizer(object):
 
         self.log.info("Reading normalization rules from %s" % rulesfile)
         with open(rulesfile, 'r') as f:
-            for l in f:
-                l = l.strip()
-                if len(l) < 1 or l[0] == '#':
+            for line in f:
+                line = line.strip()
+                if len(line) < 1 or line[0] == '#':
                     # skip comments
                     continue
-                entry = l.split(" -> ")
+                entry = line.split(" -> ")
                 entry[1] = entry[1].rstrip(";")
                 entry[0] = entry[0].strip("'")
                 entry[1] = entry[1].strip("'")

@@ -4,6 +4,8 @@
 
 Framework for station similarity classification.
 
+[![Two stations, marked by 3 station identifiers, in the fictional town of Newton.](example.png?raw=true)](example.png?raw=true)
+
 ## Requirements
 
  * `python3`

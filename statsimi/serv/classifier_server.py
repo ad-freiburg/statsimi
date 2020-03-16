@@ -43,7 +43,7 @@ def makeHandler(fb, model, log):
 
                 # cutoff distance
                 if 1000 * hav(s1.lon, s1.lat, s2.lon, s2.lat) >= fb.cutoff:
-                    log.info("Distance %d is greater than the cutoff distance %s",
+                    log.info("Distance %d greater than the cutoff distance %s",
                              1000 * hav(s1.lon, s1.lat, s2.lon, s2.lat), fb.cutoff)
                     res = [0, 1]
                 else:
