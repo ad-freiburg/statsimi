@@ -11,8 +11,6 @@ with open(os.path.join(cwd, 'README.md')) as df:
 with open(os.path.join(cwd, 'requirements.txt')) as rf:
     install_requires = rf.read()
 
-print(find_packages())
-
 setup(
     name='statsimi',
     author='Patrick Brosi',
@@ -21,6 +19,7 @@ setup(
     long_description=DESC,
     long_description_content_type='text/markdown',
     packages=find_packages(),
+    test_suite="statsimi.test_doctests",
     ext_modules=[cutil],
     install_requires=install_requires,
     entry_points={

@@ -465,7 +465,7 @@ class FileList(object):
         self.file.seek(0)
 
     def __del__(self):
-        #  print("Removing " + self.fname)
+        self.file.close()
         os.remove(self.fname)
 
     def __len__(self):

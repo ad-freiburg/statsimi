@@ -13,7 +13,7 @@ EVAL_RES_DIR := evaluation_run
 FIX_RES_DIR := fix_run
 
 # python files
-PY_SRC_ALL = $(wildcard *.py) $(wildcard */*.py)
+PY_SRC_ALL = $(wildcard statsimi/*.py) $(wildcard statsimi/*/*.py)
 SETUPPY_SRC = $(wildcard setup.py) $(wildcard */setup.py)
 PY_SRC = $(filter-out $(SETUPPY_SRC), $(PY_SRC_ALL))
 
@@ -24,7 +24,6 @@ install:
 
 test:
 	python3 setup.py test
-	for f in $(PY_SRC); do python3 -m doctest $$f; done;
 
 checkstyle:
 	flake8 $(PY_SRC)
@@ -133,7 +132,7 @@ $(FIX_RES_DIR)/%/fix.res: geodata/%-stations.osm $(FIX_RES_DIR)/%/fix_model.lib 
 
 geodata/%-stations.osm: geodata/%-latest.osm bin/osmfilter
 	@echo "Filtering osm stations..."
-	@bin/osmfilter $< --keep="public_transport=stop public_transport=stop_position public_transport=platform public_transport=station public_transport=halt highway=bus_stop railway=stop railway=station railway=halt railway=tram_stop tram=stop subway=stop" --keep-relations="public_transport=stop_area public_transport=stop_area_group" --drop-version -o=$@
+	@bin/osmfilter $< --keep="public_transport=stop public_transport=stop_position public_transport=platform public_transport=station public_transport=halt	highway=bus_stop railway=stop railway=station railway=halt railway=tram_stop railway=platform tram=stop	subway=stop" --keep-relations="public_transport=stop_area public_transport=stop_area_group" --drop-version -o=$@
 
 geodata/dach-latest.osm:
 	@mkdir -p geodata

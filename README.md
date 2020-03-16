@@ -14,10 +14,10 @@ Framework for station similarity classification.
 
 ## Building and Installation
 
-Fetch this repository and init submodules:
+Fetch this repository:
 
 ```
-git clone --recurse-submodules https://github.com/ad-freiburg/statsimi
+git clone https://github.com/ad-freiburg/statsimi
 cd statsimi
 ```
 Create virtual environment

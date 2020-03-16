@@ -7,7 +7,7 @@ Patrick Brosi <brosi@informatik.uni-freiburg.de>
 
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib import parse
-from statsimi.util.util import hav
+from statsimi.util import hav
 import logging
 from statsimi.feature.stat_ident import StatIdent
 

@@ -188,8 +188,7 @@ def main():
         fbtestargs[k] = [eval(val) for val in fbtestargs[k].split(",")]
 
     if args.cmd[0] not in ["http", "evaluate", "fix", "evaluate-par", "model"]:
-        logging.error("Invalid mode '%s', use either 'http', 'evaluate', " /
-                      "'evaluate-par' or 'fix'." % args.cmd[0])
+        logging.error("Invalid mode '%s', use either 'http', 'evaluate', 'evaluate-par' or 'fix'." % args.cmd[0])
         exit(1)
 
     mb = ModelBuilder(args.method, args.norm_file, args.voting, args.unique)

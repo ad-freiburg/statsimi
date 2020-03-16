@@ -25,7 +25,7 @@ from statsimi.classifiers.soft_vote_classifier import SoftVoteClassifier
 from statsimi.classifiers.hard_vote_classifier import HardVoteClassifier
 from statsimi.feature.stat_ident import StatIdent
 
-from statsimi.util.util import pick_args
+from statsimi.util import pick_args
 
 from statsimi.normalization.normalizer import Normalizer
 

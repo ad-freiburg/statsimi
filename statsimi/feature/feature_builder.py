@@ -16,16 +16,16 @@ import random
 from scipy.sparse import csr_matrix
 from numpy import uint8
 from statsimi.feature.station_idx import StationIdx
-from statsimi.util.util import hav
-from statsimi.util.util import ed
-from statsimi.util.util import bts_simi
-from statsimi.util.util import jaro_simi
-from statsimi.util.util import jaro_winkler_simi
-from statsimi.util.util import ped
-from statsimi.util.util import sed
-from statsimi.util.util import jaccard
-from statsimi.util.util import FileList
-from statsimi.util.util import hav_approx
+from statsimi.util import hav
+from statsimi.util import ed
+from statsimi.util import bts_simi
+from statsimi.util import jaro_simi
+from statsimi.util import jaro_winkler_simi
+from statsimi.util import ped
+from statsimi.util import sed
+from statsimi.util import jaccard
+from statsimi.util import FileList
+from statsimi.util import hav_approx
 import matplotlib.pyplot as plt
 
 
@@ -296,7 +296,7 @@ class FeatureBuilder(object):
     def build_ngrams(self):
         '''
         Build all n-grams
-        >>> from osm.osm_parser import OsmParser
+        >>> from statsimi.osm.osm_parser import OsmParser
         >>> p = OsmParser()
         >>> p.parse("testdata/test.osm")
         >>> fb = FeatureBuilder(bbox=p.bounds)
@@ -357,7 +357,7 @@ class FeatureBuilder(object):
     def build_matrix(self):
         '''
         Build the feature matrix
-        >>> from osm.osm_parser import OsmParser
+        >>> from statsimi.osm.osm_parser import OsmParser
         >>> p = OsmParser()
         >>> p.parse("testdata/test.osm")
         >>> fb = FeatureBuilder(bbox=p.bounds)
