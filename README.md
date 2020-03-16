@@ -5,6 +5,7 @@
 Framework for station similarity classification.
 
 [![Two stations, marked by 3 station identifiers, in the fictional town of Newton.](example_res.png?raw=true)](example.png?raw=true)
+
 *Three station identifiers of two stations in the fictional town of Newton, and some of their similarity relationships.*
 
 ## Requirements
