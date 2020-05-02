@@ -26,7 +26,7 @@ class Normalizer(object):
         self.chain = []
 
         self.log.info("Reading normalization rules from %s" % rulesfile)
-        with open(rulesfile, 'r') as f:
+        with open(rulesfile, 'r', encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
                 if len(line) < 1 or line[0] == '#':

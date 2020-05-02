@@ -173,7 +173,9 @@ class OsmParser(object):
         num_osm_stat_orphans = 0
         num_osm_groups = 0
 
-        with open(path, 'r', buffering=1024 * 1000 * 1000) as f:
+        RD_BUFFER = 1024 * 1000 * 1000
+
+        with open(path, 'r', encoding="utf-8", buffering=RD_BUFFER) as f:
             context = ET.iterparse(f, events=("start", "end"))
             context = iter(context)
             event, root = next(context)
@@ -259,7 +261,7 @@ class OsmParser(object):
 
         perc_last = 0
 
-        with open(path, 'r') as f:
+        with open(path, 'r', encoding="utf-8", buffering=RD_BUFFER) as f:
             context = ET.iterparse(f, events=("start", "end"))
             context = iter(context)
             event, root = next(context)

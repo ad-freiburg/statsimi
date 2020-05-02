@@ -177,7 +177,7 @@ class ModelBuilder(object):
         return model, ngram_model, fbargs, test_data, X_test, y_test, test_idx
 
     def file_type(self, path):
-        with open(path, 'r') as f:
+        with open(path, 'r', encoding='utf-8') as f:
             line = f.readline()
             if len(line.split("\t")) == 9:
                 return "pfile"
@@ -189,7 +189,7 @@ class ModelBuilder(object):
         ll = [math.inf, math.inf]
         ur = [-math.inf, -math.inf]
 
-        with open(path, 'r') as f:
+        with open(path, 'r', encoding='utf-8') as f:
             for line in f:
                 lparts = line.split("\t")
 
