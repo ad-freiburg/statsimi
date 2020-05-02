@@ -23,6 +23,7 @@ setup(
     license='GPLv3',
     test_suite="statsimi.test_doctests",
     ext_modules=[cutil],
+    setup_requires=['wheel'],
     install_requires=install_requires,
     entry_points={
         'console_scripts': [
