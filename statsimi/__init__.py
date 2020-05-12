@@ -5,12 +5,12 @@ Chair of Algorithms and Data Structures.
 Patrick Brosi <brosi@informatik.uni-freiburg.de>
 '''
 
-from .serv.classifier_server import ClassifierServer
 from .evaluate.param_evaluator import ParamEvaluator
-from .evaluate.evaluator import Evaluator
 from .osm.osm_fixer import OsmFixer
+from .evaluate.evaluator import Evaluator
 from .feature.feature_builder import FeatureBuilder
 from .feature.model_builder import ModelBuilder
+from .serv.classifier_server import ClassifierServer
 import pickle
 import argparse
 import logging

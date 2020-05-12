@@ -60,10 +60,14 @@ class OsmFixer(object):
 
     def fill_osm_stations(self):
         for st_id, st in enumerate(self.features.stations):
+            geom = []
+            if st.lat != None:
+                geom = [st.lat, st.lon]
+            else:
+                geom = st.poly
             if st.osmnid not in self.osm_stations:
                 self.osm_stations[st.osmnid] = {
-                    "lat": st.lat,
-                    "lon": st.lon,
+                    "geom": geom,
                     "name_stations": [],
                     "rel_name_stations": [],
                     "orig_group_id": st.gid,
@@ -174,13 +178,11 @@ class OsmFixer(object):
                 file.write(str(osm_id) +
                            "\t" +
                            "\t" +
-                           str(st["lat"]) +
-                           "\t" +
-                           str(st["lon"]) +
-                           "\t" +
                            str(st["orig_group_id"]) +
                            "\t" +
-                           str(st["target_group_id"]))
+                           str(st["target_group_id"])+
+                           "\t" +
+                           "\t".join(st["geom"]))
 
                 # attributes in name stations
                 for _, fstid in enumerate(st["name_stations"]):

@@ -13,10 +13,11 @@ class StatIdent(object):
 
     def __init__(
             self,
-            lat,
-            lon,
             name,
             osmnid=0,
+            lat=None,
+            lon=None,
+            poly=None,
             gid=None,
             srctype=None,
             name_attr=None,
@@ -24,6 +25,7 @@ class StatIdent(object):
             spice_id=None):
         self.lat = lat
         self.lon = lon
+        self.poly = poly
         self.name = name
         self.osmnid = osmnid
         self.gid = gid

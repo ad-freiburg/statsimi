@@ -61,6 +61,31 @@ class StationIdx(object):
         coords = self.get_cell(xy[0], xy[1])
         self.idx[coords[0]][coords[1]].add(id)
 
+    def add_stat_group_poly(self, id, poly):
+        '''
+        Add station based on polyon [lon, lat]
+        '''
+
+        # TODO! we have to check whether the polygon boundary crosses the grid cell
+
+        for lon, lat in poly:
+            self.add_stat_group(id, lon, lat)
+
+    def get_neighbors_poly(self, poly, d):
+        '''
+        Return neighbors at distance d (meters) from  the polygon.
+        d is a lower bound: each station with distance d from the lon/lat pair
+        is included, but additional stations with a distance > d may be
+        included.
+        '''
+
+        # TODO! we have to check whether the polygon boundary crosses the grid cell
+
+        ret = set()
+
+        for lon, lat in poly:
+            ret.update(self.get_neighbors(lon, lat, d))
+
     def get_neighbors(self, lon, lat, d):
         '''
         Return neighbors at distance d (meters) from lon/lat pair.

@@ -45,6 +45,91 @@ def hav_approx(lon1, lat1, lon2, lat2):
     '''
     return cutil.haversine_approx(lat1, lon1, lat2, lon2)
 
+def hav_approx_poly_stat(poly, lon2, lat2):
+    '''
+    Calculate the great-circle distance in km between two lat/lon pairs
+    using the haversine formula, but as an approximation which uses less
+    trigonometric functions.
+
+    >>> hav_approx_poly_stat([(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)], 0.5, 0.5)
+    0.0
+    >>> hav_approx_poly_stat([(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)], 1, 1)
+    0.0
+    >>> hav_approx_poly_stat([(7.828454, 47.997987), (7.829583, 47.997604), (7.830205, 47.998403), ( 7.828977, 47.998751)], 7.829302, 47.998186)
+    0.0
+    >>> import math
+    >>> math.floor(hav_approx_poly_stat([(7.828454, 47.997987), (7.829583, 47.997604), (7.830205, 47.998403), ( 7.828977, 47.998751)], 7.830728, 47.997624) * 1000)
+    74
+    '''
+    return cutil.hav_approx_poly_stat(lon2, lat2, poly)
+
+def hav_approx_poly_poly(polyA, polyB):
+    '''
+    Calculate the great-circle distance in km between two lat/lon pairs
+    using the haversine formula, but as an approximation which uses less
+    trigonometric functions.
+
+    >>> hav_approx_poly_poly([(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)], [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)])
+    0.0
+    >>> hav_approx_poly_poly([(7.828454, 47.997987), (7.829583, 47.997604), (7.830205, 47.998403), ( 7.828977, 47.998751)], [(7.829055, 47.997684), (7.829726, 47.997436), (7.829940, 47.997779), (7.829353, 47.998000)])
+    0.0
+    >>> import math
+    >>> math.floor(hav_approx_poly_poly([(7.828454, 47.997987), (7.829583, 47.997604), (7.830205, 47.998403), ( 7.828977, 47.998751)], [(7.829055, 47.997684), (7.829726, 47.997436)]) * 1000)
+    9
+    >>> import math
+    >>> math.floor(hav_approx_poly_poly([(7.828454, 47.997987), (7.829583, 47.997604), (7.830205, 47.998403), ( 7.828977, 47.998751)], [(7.829726, 47.997436)]) * 1000)
+    21
+    '''
+    return cutil.hav_approx_poly_poly(polyA, polyB)
+
+def centroid(poly):
+    '''
+    Calculates a polygons centroid
+    >>> centroid([(7.828454, 47.997987), (7.829583, 47.997604), (7.830205, 47.998403), ( 7.828977, 47.998751)])
+    (7.82930475, 47.99818625)
+    '''
+    return cutil.centroid(poly)
+
+def poly_contains_point(poly, lon, lat):
+    '''
+    Checks whether poly contains (lat, lon)
+
+    >>> poly_contains_point([(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)], 0.5, 0.5)
+    True
+    >>> poly_contains_point([(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)], 0.5, 1.5)
+    False
+    >>> poly_contains_point([(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)], -0.5, 1.5)
+    False
+    >>> poly_contains_point([(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)], 0.1, 0)
+    True
+    '''
+    return cutil.poly_contains_point(lon, lat, poly);
+
+def point_to_segment_hav(lon1, lat1, lon2, lat2, lonP, latP):
+    '''
+    Calculate the approximate great-circle distance between the line
+    la->lb and the point px
+
+    >>> import math
+    >>> math.floor(point_to_segment_hav(7.829583, 47.997604, 7.829583, 47.997604, 7.830728, 47.997624) * 1000)
+    85
+    >>> import math
+    >>> math.floor(point_to_segment_hav(7.829583, 47.997604, 7.830205, 47.998403, 7.830728, 47.997624) * 1000)
+    74
+    >>> import math
+    >>> math.floor(point_to_segment_hav(7.821820,47.998197,
+    ...     7.833095,47.993756,
+    ...     7.827629, 47.996061) * 1000)
+    14
+    >>> import math
+    >>> math.floor(point_to_segment_hav(7.821820, 47.998197,
+    ...      7.833095, 47.993756,
+    ...      7.821820, 47.998197) * 1000)
+    0
+    '''
+
+    return cutil.hav_to_segment_approx(lon1, lat1, lon2, lat2, lonP, latP)
+
 
 def jaro_simi(s, t):
     '''

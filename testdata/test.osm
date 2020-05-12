@@ -84,6 +84,12 @@
 		<tag k="uic_ref" v="808101"/>
 		<tag k="wheelchair" v="yes"/>
 	</node>
+	<way id="1">
+		<tag k="name" v="Schwabentorbrücke"/>
+		<nd ref="2496897172"/>
+		<tag k="highway" v="platform"/>
+		<nd ref="4984926391"/>
+	</way>
 	<relation id="3271923">
 		<member type="node" ref="248609020" role="stop"/>
 		<member type="node" ref="248609028" role="stop"/>

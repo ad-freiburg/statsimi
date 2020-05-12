@@ -373,7 +373,11 @@ class FeatureBuilder(object):
 
         for sid, stat in enumerate(self._stats):
             stat = self._stats[sid]
-            sidx.add_stat_group(stat.gid, stat.lon, stat.lat)
+
+            if stat.lon == None:
+                sidx.add_stat_group_poly(stat.gid, stat.poly)
+            else:
+                sidx.add_stat_group(stat.gid, stat.lon, stat.lat)
 
         self.log.info("Writing matrix from %s groups, %s station identifiers"
                       % (len(self._grps), len(self._stats)))
@@ -407,7 +411,10 @@ class FeatureBuilder(object):
 
                 stations_in_group += 1
 
-                loc = sidx.get_neighbors(st1.lon, st1.lat, self.cutoff)
+                if st1.lon == None:
+                    loc = sidx.get_neighbors_poly(st1.poly, self.cutoff)
+                else:
+                    loc = sidx.get_neighbors(st1.lon, st1.lat, self.cutoff)
 
                 self.build_pairs(sid1, False, loc, matched, data, ind, iptr)
 
@@ -418,7 +425,11 @@ class FeatureBuilder(object):
                     # near the station to give the model the chance to learn
                     # obvious mistakes
 
-                    sp = sidx.get_neighbors(st1.lon, st1.lat, self.cutoff * 10)
+                    if st1.lon == None:
+                        sp = sidx.get_neighbors_poly(st1.poly, self.cutoff * 10)
+                    else:
+                        sp = sidx.get_neighbors(st1.lon, st1.lat, self.cutoff * 10)
+
                     sp = random.sample(sp, k=min(len(sp), n))
 
                     self.build_pairs(sid1, True, sp, matched, data, ind, iptr)
@@ -609,10 +620,13 @@ class FeatureBuilder(object):
                 if st2.spice_id is not None:
                     wsid2 = st2.spice_id
 
-                d = '\t'.join([str(wsid1), st1.name, str(st1.lat),
-                               str(st1.lon), str(wsid2), st2.name,
-                               str(st2.lat), str(st2.lon), str(int(match))])
-                self._pairsfile.write(d + '\n')
+                if st1.lat == None:
+                    print("TODO: Cannot write polyons to station file")
+                else:
+                    d = '\t'.join([str(wsid1), st1.name, str(st1.lat),
+                                   str(st1.lon), str(wsid2), st2.name,
+                                   str(st2.lat), str(st2.lon), str(int(match))])
+                    self._pairsfile.write(d + '\n')
 
     def get_feature_vec(self, st1, st2):
         data = []
@@ -626,10 +640,17 @@ class FeatureBuilder(object):
         return self.matrix
 
     def dist(self, s1, s2):
-        if self.cutoff < 500000:
-            mdist = int(1000 * hav_approx(s1.lon, s1.lat, s2.lon, s2.lat))
+        if s1.lat != None and s2.lat != None:
+            if self.cutoff < 500000:
+                mdist = int(1000 * hav_approx(s1.lon, s1.lat, s2.lon, s2.lat))
+            else:
+                mdist = int(1000 * hav(s1.lon, s1.lat, s2.lon, s2.lat))
+        elif s1.lat != None:
+            mdist = int(1000 * hav_approx_poly_stat(s1.poly, s2.lon, s2.lat))
+        elif s2.lat != None:
+            mdist = int(1000 * hav_approx_poly_stat(s2.poly, s1.lon, s1.lat))
         else:
-            mdist = int(1000 * hav(s1.lon, s1.lat, s2.lon, s2.lat))
+            mdist = int(1000 * hav_approx_poly_poly(s1.poly, s2.poly))
         return mdist
 
     def diffmerge(self, l1, l2):
@@ -676,8 +697,24 @@ class FeatureBuilder(object):
         pairs = [None] * n
         numtiles = 256
 
-        lon = ((st1.lon + st2.lon) / 2) + 180
-        lat = ((st1.lat + st2.lat) / 2) + 90
+        if st1.lon != None:
+            lon1 = st1.lon
+            lat1 = st1.lat
+        else:
+            c = centroid(st1.poly)
+            lon1 = c[0]
+            lat1 = c[1]
+
+        if st2.lon != None:
+            lon2 = st2.lon
+            lat2 = st2.lat
+        else:
+            c = centroid(st2.poly)
+            lon2 = c[0]
+            lat2 = c[1]
+
+        lon = ((lon1 + lon2) / 2) + 180
+        lat = ((lat1 + lat2) / 2) + 90
 
         tilelength_x = 360 / numtiles
         tilelength_y = 180 / numtiles
