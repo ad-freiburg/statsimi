@@ -40,7 +40,8 @@ class ParamEvaluator(object):
             testfiles=[],
             outputdir=".",
             voting="soft",
-            unique_names=False):
+            unique_names=False,
+            with_polygons=False):
         self.p = p
         self.log = logging.getLogger('pareval')
         self.method = method
@@ -54,6 +55,7 @@ class ParamEvaluator(object):
         self.outputdir = outputdir
         self.vote = voting
         self.unique = unique_names
+        self.with_polygons = with_polygons
 
         # number of evaluation runs per test
         self.runs = 5
@@ -122,7 +124,7 @@ class ParamEvaluator(object):
             print_classification_report(*[c[curi] for c in conf_ms], digits=5)
 
     def evaluate(self):
-        mb = ModelBuilder(self.method, self.norm_file, self.vote, self.unique)
+        mb = ModelBuilder(self.method, self.norm_file, self.vote, self.unique, self.with_polygons)
 
         modelargs_base = self.modelargs
         fbargs_base = self.fbargs

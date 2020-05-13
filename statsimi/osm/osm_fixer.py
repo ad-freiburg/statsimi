@@ -62,7 +62,7 @@ class OsmFixer(object):
         for st_id, st in enumerate(self.features.stations):
             geom = []
             if st.lat != None:
-                geom = [st.lat, st.lon]
+                geom = [(st.lon, st.lat)]
             else:
                 geom = st.poly
             if st.osmnid not in self.osm_stations:
@@ -182,7 +182,7 @@ class OsmFixer(object):
                            "\t" +
                            str(st["target_group_id"])+
                            "\t" +
-                           "\t".join(st["geom"]))
+                           "\t".join([str(coord) for tpl in st["geom"] for coord in tpl]))
 
                 # attributes in name stations
                 for _, fstid in enumerate(st["name_stations"]):

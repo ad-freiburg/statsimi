@@ -17,6 +17,7 @@ from scipy.sparse import csr_matrix
 from numpy import uint8
 from statsimi.feature.station_idx import StationIdx
 from statsimi.util import hav
+from statsimi.util import centroid
 from statsimi.util import ed
 from statsimi.util import bts_simi
 from statsimi.util import jaro_simi
@@ -26,6 +27,8 @@ from statsimi.util import sed
 from statsimi.util import jaccard
 from statsimi.util import FileList
 from statsimi.util import hav_approx
+from statsimi.util import hav_approx_poly_poly
+from statsimi.util import hav_approx_poly_stat
 import matplotlib.pyplot as plt
 
 
@@ -646,9 +649,9 @@ class FeatureBuilder(object):
             else:
                 mdist = int(1000 * hav(s1.lon, s1.lat, s2.lon, s2.lat))
         elif s1.lat != None:
-            mdist = int(1000 * hav_approx_poly_stat(s1.poly, s2.lon, s2.lat))
-        elif s2.lat != None:
             mdist = int(1000 * hav_approx_poly_stat(s2.poly, s1.lon, s1.lat))
+        elif s2.lat != None:
+            mdist = int(1000 * hav_approx_poly_stat(s1.poly, s2.lon, s2.lat))
         else:
             mdist = int(1000 * hav_approx_poly_poly(s1.poly, s2.poly))
         return mdist

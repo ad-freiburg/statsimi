@@ -5,6 +5,7 @@ Chair of Algorithms and Data Structures.
 Patrick Brosi <brosi@informatik.uni-freiburg.de>
 '''
 
+from statsimi.util import centroid
 
 class StatIdent(object):
     '''
@@ -38,5 +39,10 @@ class StatIdent(object):
         self.name_attr = name_attr
 
     def __str__(self):
-        return "\"%s\" (nid=%d) @ (%f, %f)" % (
-            self.name, self.osmnid, self.lat, self.lon)
+        if self.lat != None:
+            return "\"%s\" (nid=%d) @ (%f, %f)" % (
+                self.name, self.osmnid, self.lat, self.lon)
+        else:
+            c = centroid(self.poly)
+            return "\"%s\" (nid=%d) @ (polygon w center %f, %f)" % (
+                self.name, self.osmnid, c[1], c[0])

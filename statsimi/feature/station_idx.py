@@ -86,6 +86,8 @@ class StationIdx(object):
         for lon, lat in poly:
             ret.update(self.get_neighbors(lon, lat, d))
 
+        return ret
+
     def get_neighbors(self, lon, lat, d):
         '''
         Return neighbors at distance d (meters) from lon/lat pair.

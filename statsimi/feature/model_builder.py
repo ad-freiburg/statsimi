@@ -56,7 +56,7 @@ class ModelBuilder(object):
     '''
 
     def __init__(self, method="rf", norm_rule_file=None, voting='soft',
-                 unique_names=False):
+                 unique_names=False, with_polygons=False):
         '''
         Constructor.
         '''
@@ -65,6 +65,7 @@ class ModelBuilder(object):
         self.normzer = None
         self.voting = voting
         self.unique_names = unique_names
+        self.with_polygons = with_polygons
 
         if norm_rule_file:
             self.normzer = Normalizer(norm_rule_file)
@@ -263,7 +264,7 @@ class ModelBuilder(object):
                 if t == "pfile":
                     self.log.error("Cannot mix OSM and pairs input files")
                     exit(1)
-                osmp.parse(filepath, unique=self.unique_names)
+                osmp.parse(filepath, unique=self.unique_names, with_polygons=self.with_polygons)
                 t = "osm"
             if self.file_type(filepath) == "pfile":
                 if t == "osm":

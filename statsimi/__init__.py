@@ -99,6 +99,11 @@ def main():
     )
 
     parser.add_argument(
+        '--with_polygons', action='store_true', default=False,
+        help='Also parse OSM ways for polyonal stations'
+    )
+
+    parser.add_argument(
         '--topk', type=int, default=200,
         help='Top q-grams to use as features in training'
     )
@@ -191,7 +196,7 @@ def main():
         logging.error("Invalid mode '%s', use either 'http', 'evaluate', 'evaluate-par' or 'fix'." % args.cmd[0])
         exit(1)
 
-    mb = ModelBuilder(args.method, args.norm_file, args.voting, args.unique)
+    mb = ModelBuilder(args.method, args.norm_file, args.voting, args.unique, args.with_polygons)
 
     if args.cmd[0] == "evaluate-par":
         logging.info(" === Parameter evaluation mode ===\n")
@@ -213,7 +218,8 @@ def main():
             fbtestargs=fbtestargs,
             outputdir=args.eval_out,
             voting=args.voting,
-            unique_names=args.unique)
+            unique_names=args.unique,
+            with_polygons=args.with_polygons)
         pareval.evaluate()
 
         exit(0)

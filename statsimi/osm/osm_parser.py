@@ -297,10 +297,14 @@ class OsmParser(object):
                     self.num_osm_groups += 1
 
                     for c2 in c1:
-                        if c2.tag != "member" or c2.attrib["type"] != "node":
+                        if c2.tag != "member":
                             continue
-                        self.nd_group_idx[int(c2.attrib["ref"])] = len(
-                            self.groups) - 1
+                        if c2.attrib["type"] == "node":
+                            self.nd_group_idx[int(c2.attrib["ref"])] = len(
+                                self.groups) - 1
+                        if c2.attrib["type"] == "way":
+                            self.way_group_idx[int(c2.attrib["ref"])] = len(
+                                self.groups) - 1
 
                 if is_meta_st_area == 1:
                     for c2 in c1:
@@ -471,6 +475,11 @@ class OsmParser(object):
 
                 i = i + 1
 
+                perc = int((f.tell() / way_end) * 100)
+                if perc - perc_last >= 10:
+                    perc_last = perc
+                    self.log.info("@ %d%%" % (perc))
+
                 if c1.tag == "relation":
                     break
 
@@ -478,12 +487,6 @@ class OsmParser(object):
                     if i % BUFFER == 0:
                         root.clear()
                     continue
-
-                perc = int((f.tell() / way_end) * 100)
-                if perc - perc_last >= 10:
-                    perc_last = perc
-                    self.log.info("@ %d%%" % (perc))
-
 
                 wid = int(c1.attrib["id"])
                 self.way_nds[wid] = []
@@ -561,7 +564,7 @@ class OsmParser(object):
                         poly=poly,
                         name=name,
                         orig_nd_name=orig_nd_name,
-                        osmnid=wid,
+                        osmnid=-wid,
                         gid=self.way_group_idx[wid],
                         srctype=1,
                         name_attr=attr))
@@ -582,8 +585,8 @@ class OsmParser(object):
                         poly=poly,
                         name=grp_name[0],
                         orig_nd_name=orig_nd_name,
-                        osmnid=wid,
-                        gid=self.nd_group_idx[wid],
+                        osmnid=-wid,
+                        gid=self.way_group_idx[wid],
                         srctype=2,
                         name_attr=grp_name[1]))
                 self.groups[self.way_group_idx[wid]].add_station(
