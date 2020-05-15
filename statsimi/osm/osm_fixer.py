@@ -7,6 +7,7 @@ Patrick Brosi <brosi@informatik.uni-freiburg.de>
 
 from statsimi.feature.stat_group import StatGroup
 import logging
+import re
 
 
 class OsmFixer(object):
@@ -25,6 +26,8 @@ class OsmFixer(object):
 
         self.simi_idx = []
 
+        self.tracknumbers = {}
+
         self.test_idx = None
 
         self.or_grp_rm_conf = {}
@@ -34,8 +37,12 @@ class OsmFixer(object):
 
         self.osm_stations = {}
 
+        self.osm_relations = {}
+
     def analyze(self, model):
         self.log.info("Analyzing...")
+
+        self.fill_osm_groups()
 
         self.fill_osm_stations()
 
@@ -56,20 +63,36 @@ class OsmFixer(object):
 
         self.update_osm_stations()
 
+        self.update_osm_relations()
+
         self.log.info("Done.")
+
+    def fill_osm_groups(self):
+        for gid, gr in enumerate(self.features.groups):
+            if not gr.osm_rel_id:
+                continue
+
+            self.osm_relations[gr.osm_rel_id] = {
+                "name_stations": {},
+                "group_id": gid,
+                "wrong_attrs": {}
+            }
+
 
     def fill_osm_stations(self):
         for st_id, st in enumerate(self.features.stations):
             geom = []
-            if st.lat != None:
+            if st.lat is not None:
                 geom = [(st.lon, st.lat)]
             else:
                 geom = st.poly
+
+            # we write every node to osm stations to catch
+            # nodes without a name attribute
             if st.osmnid not in self.osm_stations:
                 self.osm_stations[st.osmnid] = {
                     "geom": geom,
                     "name_stations": [],
-                    "rel_name_stations": [],
                     "orig_group_id": st.gid,
                     "target_group_id": st.gid,
                     "wrong_attrs": {}
@@ -77,14 +100,95 @@ class OsmFixer(object):
 
             if st.srctype == 1:
                 self.osm_stations[st.osmnid]["name_stations"].append(st_id)
-            else:
-                self.osm_stations[st.osmnid]["rel_name_stations"].append(st_id)
+
+            elif st.srctype == 2:
+                group = self.get_group(st.gid)
+                if not group.osm_rel_id:
+                    continue
+
+                if st.name_attr not in self.osm_relations[group.osm_rel_id]["name_stations"]:
+                    self.osm_relations[group.osm_rel_id]["name_stations"][st.name_attr] = []
+
+                self.osm_relations[group.osm_rel_id]["name_stations"][st.name_attr].append(st_id)
 
     def get_group(self, gid):
         return self.features.groups[gid]
 
     def get_station(self, sid):
         return self.features.stations[sid]
+
+    def update_osm_relations(self):
+        for osm_rel_id, osm_rel in self.osm_relations.items():
+            self.update_osm_relation(osm_rel_id, osm_rel)
+
+    def update_osm_relation(self, osm_rel_id, osm_rel):
+        if len(osm_rel["name_stations"]) == 0:
+            # no name stations, there was no name attribute for this
+            # relations
+            print("SUGG: Add 'name' attribute to station relation %d" % osm_rel_id)
+            return
+
+        for name in osm_rel["name_stations"]:
+            dismatches = 0
+            conf = 0
+
+            individual_confs = {}
+            individual_counts = {}
+            for n_stat_id in osm_rel["name_stations"][name]:
+                n_stat = self.get_station(n_stat_id)
+                if n_stat.gid == osm_rel["group_id"] or n_stat_id not in self.or_grp_rm_conf:
+                    continue
+
+                new_group = self.get_group(n_stat.gid)
+                if new_group.osm_rel_id:
+                    # if the attribute is not in an orphan group, it was moved
+                    # into another group. In this case, the two groups were merged and
+                    # we don't report an attr error
+                    continue
+
+                dismatches += 1
+                conf += self.or_grp_rm_conf[n_stat_id][0]
+
+                # we have to collect the individual stations or attributes with
+                # which this name does not match. Since we have inserted for each
+                # relation tag multiple station identifiers, there might be several scores
+                # and we have to average them and make the dismatches unique
+                for n_stat_id2 in self.or_grp_rm_conf[n_stat_id][1]:
+                    if n_stat_id2 not in individual_confs:
+                        individual_confs[n_stat_id2] = 0
+                        individual_counts[n_stat_id2] = 0
+
+                    individual_confs[n_stat_id2] += self.or_grp_rm_conf[n_stat_id][1][n_stat_id2]
+                    individual_counts[n_stat_id2] += 1
+
+            # dismatch only if half or more of the name stations are a dismatch
+            if dismatches == 0 or dismatches < len(osm_rel["name_stations"][name]) / 2.0:
+                continue
+
+            conf = conf / dismatches
+
+            # dismatches is now the number of name stations for this attribute
+            # which dont match the relation's group
+
+            # conf is their average deletion confidence
+
+            print(
+                "INCO: in rel #%d, attribute '%s'='%s' did not match (conf = %.2f)" %
+                (osm_rel_id,
+                 n_stat.name_attr,
+                 n_stat.name,
+                 conf))
+
+            osm_rel["wrong_attrs"][name] = []
+
+            for n_stat_id2 in individual_confs:
+                n_stat_2 = self.get_station(n_stat_id2)
+                conf = individual_confs[n_stat_id2] / individual_counts[n_stat_id2]
+                osm_rel["wrong_attrs"][name].append((n_stat_id2, conf))
+                print("  no match for '%s'='%s' (conf = %.2f)" %
+                    (n_stat_2.name_attr,
+                     n_stat_2.name,
+                     conf))
 
     def update_osm_stations(self):
         for osm_nd_id, osm_st in self.osm_stations.items():
@@ -100,18 +204,70 @@ class OsmFixer(object):
         for n_stat_id in osm_st["name_stations"]:
             n_stat = self.get_station(n_stat_id)
             if n_stat.gid != osm_st["orig_group_id"] and n_stat_id in self.or_grp_rm_conf:
-                print("INCO: in node #%d, attribute '%s'='%s' did not match group #%d (conf = %.2f)" % (
-                    osm_nd_id, n_stat.name_attr, n_stat.name, n_stat.gid, self.or_grp_rm_conf[n_stat_id][0]))
+                print(
+                    "INCO: in node #%d, attribute '%s'='%s' did not match group #%d (conf = %.2f)" %
+                    (osm_nd_id,
+                     n_stat.name_attr,
+                     n_stat.name,
+                     n_stat.gid,
+                     self.or_grp_rm_conf[n_stat_id][0]))
 
-                if n_stat.srctype == 1:
-                    osm_st["wrong_attrs"][n_stat.name_attr] = []
+                osm_st["wrong_attrs"][n_stat.name_attr] = []
+
+                individual_confs = {}
+                individual_counts = {}
+                individual_stats = {}
 
                 for n_stat_id2 in self.or_grp_rm_conf[n_stat_id][1]:
                     n_stat_2 = self.get_station(n_stat_id2)
-                    osm_st["wrong_attrs"][n_stat.name_attr].append(
-                        (n_stat_id2, self.or_grp_rm_conf[n_stat_id][1][n_stat_id2]))
-                    print("  no match for '%s'='%s' (conf = %.2f)" % (
-                        n_stat_2.name_attr, n_stat_2.name, self.or_grp_rm_conf[n_stat_id][1][n_stat_id2]))
+
+                    conf = self.or_grp_rm_conf[n_stat_id][1][n_stat_id2]
+
+                    if n_stat_2.srctype == 2:
+                        group = self.get_group(n_stat_2.gid)
+                        if group.osm_rel_id == None or group.osm_rel_id == 1:
+                            # don't report negative matches to name attrs which
+                            # have been removed from their original group
+                            continue
+
+                        if n_stat_2.gid not in individual_confs:
+                            individual_confs[n_stat_2.gid] = {}
+                            individual_counts[n_stat_2.gid] = {}
+                            individual_stats[n_stat_2.gid] = {}
+
+                        if n_stat_2.name_attr not in individual_confs[n_stat_2.gid]:
+                            individual_confs[n_stat_2.gid][n_stat_2.name_attr] = 0
+                            individual_counts[n_stat_2.gid][n_stat_2.name_attr] = 0
+                            individual_stats[n_stat_2.gid][n_stat_2.name_attr] = n_stat_id2
+
+                        individual_counts[n_stat_2.gid][n_stat_2.name_attr] += 1
+                        individual_confs[n_stat_2.gid][n_stat_2.name_attr] += conf
+
+                        continue
+
+                    osm_st["wrong_attrs"][n_stat.name_attr].append((n_stat_id2, conf))
+                    print("  no match for '%s'='%s' (conf = %.2f)" %
+                        (n_stat_2.name_attr,
+                         n_stat_2.name,
+                         conf))
+
+                for gid in individual_counts:
+                    for attr_name in individual_counts[gid]:
+                        stat = individual_stats[gid][attr_name]
+                        conf = individual_confs[gid][attr_name] / individual_counts[gid][attr_name]
+                        osm_st["wrong_attrs"][n_stat.name_attr].append((stat, conf))
+                        print("  no match for '%s'='%s' (conf = %.2f)" %
+                            (attr_name,
+                             self.get_station(stat).name,
+                             conf))
+
+                group = self.get_group(n_stat.gid)
+                if len(group.stats) == 1 and group.osm_rel_id == None and self.stat_is_tracknumber_heur(n_stat_id):
+                    # track mistakes are marked by an attr error with the attribute itself!
+                    osm_st["wrong_attrs"][n_stat.name_attr].append((n_stat_id, 0.6))
+                    print(
+                        "  ('%s' = '%s' seems to be a track number!)" %
+                        (n_stat.name_attr, n_stat.name))
 
         group_counts = {}
         for n_stat_id in osm_st["name_stations"]:
@@ -135,21 +291,28 @@ class OsmFixer(object):
                 if self.get_group(osm_st["orig_group_id"]).osm_rel_id:
                     # ...and the original group was a OSM relation group...
                     if self.get_group(sorted_groups[0][0]).osm_rel_id:
-                        # ...and the new group is also a OSM relation group
-                        print("SUGG: Move %d from relation #%d to relation #%d" % (osm_nd_id, self.get_group(
-                            osm_st["orig_group_id"]).osm_rel_id, self.get_group(sorted_groups[0][0]).osm_rel_id))
+                        # ...and the new group is also an OSM relation group
+                        print(
+                            "SUGG: Move %d from relation #%d to relation #%d" %
+                            (osm_nd_id, self.get_group(
+                                osm_st["orig_group_id"]).osm_rel_id, self.get_group(
+                                sorted_groups[0][0]).osm_rel_id))
                         osm_st["target_group_id"] = sorted_groups[0][0]
                     else:
                         # ...and the new group is an orphan group
-                        print("SUGG: Move %d out of relation #%d" % (
-                            osm_nd_id, self.get_group(osm_st["orig_group_id"]).osm_rel_id))
+                        print(
+                            "SUGG: Move %d out of relation #%d" %
+                            (osm_nd_id, self.get_group(
+                                osm_st["orig_group_id"]).osm_rel_id))
                         osm_st["target_group_id"] = sorted_groups[0][0]
                 else:
                     # ...and the original group was an orphan group...
                     if self.get_group(sorted_groups[0][0]).osm_rel_id:
-                        # ...and the new group is a OSM relation group
-                        print("SUGG: Move %d to relation #%d" % (
-                            osm_nd_id, self.get_group(sorted_groups[0][0]).osm_rel_id))
+                        # ...and the new group is an OSM relation group
+                        print(
+                            "SUGG: Move %d to relation #%d" %
+                            (osm_nd_id, self.get_group(
+                                sorted_groups[0][0]).osm_rel_id))
                         osm_st["target_group_id"] = sorted_groups[0][0]
                     else:
                         # ... and the new group is a non-osm group ...
@@ -169,18 +332,18 @@ class OsmFixer(object):
                 pass
 
     def print_to_file(self, path):
-        osmid_to_id = {}
+        osmnid_to_sid = {}
         with open(path, 'w', encoding='utf-8') as file:
             # first, write stations
-            for id, osm_id in enumerate(self.osm_stations):
-                osmid_to_id[osm_id] = id
-                st = self.osm_stations[osm_id]
-                file.write(str(osm_id) +
+            for id, osm_nid in enumerate(self.osm_stations):
+                osmnid_to_sid[osm_nid] = id
+                st = self.osm_stations[osm_nid]
+                file.write(str(osm_nid) +
                            "\t" +
                            "\t" +
                            str(st["orig_group_id"]) +
                            "\t" +
-                           str(st["target_group_id"])+
+                           str(st["target_group_id"]) +
                            "\t" +
                            "\t".join([str(coord) for tpl in st["geom"] for coord in tpl]))
 
@@ -196,15 +359,26 @@ class OsmFixer(object):
             # second, write groups
             for gid, group in enumerate(self.features.groups):
                 if group.osm_rel_id:
-                    file.write(str(group.osm_rel_id) + "\n")
+                    file.write(str(group.osm_rel_id))
+
+                    # NOTE: osm rel id 1 is used for new OSM relations
+                    if group.osm_rel_id != 1:
+                        osm_grp = self.osm_relations[group.osm_rel_id]
+
+                        # attributes in group
+                        for _, name in enumerate(osm_grp["name_stations"]):
+                            file.write("\t" + name +
+                                       "\t" + self.get_station(osm_grp["name_stations"][name][0]).name)
                 else:
-                    file.write("0\n")
+                    file.write("0")
+
+                file.write("\n")
 
             file.write("\n")
 
-            # third, write attr errors
-            for id, osm_id in enumerate(self.osm_stations):
-                st = self.osm_stations[osm_id]
+            # third, write station attr errors
+            for id, osm_nid in enumerate(self.osm_stations):
+                st = self.osm_stations[osm_nid]
 
                 # attributes in name stations
                 for (attr_name, unmatches) in st["wrong_attrs"].items():
@@ -219,9 +393,59 @@ class OsmFixer(object):
                                        "\t" +
                                        str(conf) +
                                        "\t" +
-                                       str(osmid_to_id[fst.osmnid]) +
+                                       str(osmnid_to_sid[fst.osmnid]) +
                                        "\n")
-                        #  elif st["src"] == "relation":
+                        elif fst.srctype == 2:
+                            file.write(str(id) +
+                                       "\t" +
+                                       attr_name +
+                                       "\t" +
+                                       fst.name_attr +
+                                       "\t" +
+                                       str(conf) +
+                                       "\t" +
+                                       str(-fst.gid) +
+                                       "\n")
+
+            file.write("\n")
+
+            # fourth, write group attr errors
+            for osm_rel_id in self.osm_relations:
+                rel = self.osm_relations[osm_rel_id]
+
+                gid = rel["group_id"]
+
+                # attributes in name stations
+                for (attr_name, unmatches) in rel["wrong_attrs"].items():
+                    for _, (sid, conf) in enumerate(unmatches):
+                        fst = self.get_station(sid)
+                        if fst.srctype == 1:
+                            # no match to another station
+                            file.write(str(gid) +
+                                       "\t" +
+                                       attr_name +
+                                       "\t" +
+                                       fst.name_attr +
+                                       "\t" +
+                                       str(conf) +
+                                       "\t" +
+                                       str(osmnid_to_sid[fst.osmnid]) +
+                                       "\n")
+                        elif fst.srctype == 2:
+                            # no match to another attribute in a group
+                            # important: because of our update rules,
+                            # this can only happen to attrs in the same
+                            # group!
+                            file.write(str(gid) +
+                                       "\t" +
+                                       attr_name +
+                                       "\t" +
+                                       fst.name_attr +
+                                       "\t" +
+                                       str(conf) +
+                                       "\t" +
+                                       str(-gid) +
+                                       "\n")
 
             file.write("\n")
 
@@ -239,6 +463,10 @@ class OsmFixer(object):
 
                 stid1 = self.features.pairs[lid][0]
                 stid2 = self.features.pairs[lid][1]
+
+                if (self.features.stations[stid1].name_attr == "alt_name") != (
+                        self.features.stations[stid2].name_attr == "alt_name"):
+                    continue
 
                 # wrongly grouped as similar according to our model!
                 in_group_dismatches[stid1] += 1
@@ -267,11 +495,8 @@ class OsmFixer(object):
             group = self.features.groups[st.gid]
 
             if dismatches >= (len(group.stats) / 2.0):
-                # print(st["name"] + " (" + str(st["osm_nd_id"]) + ") seems to
-                # be grouped incorrectly to group #" + str(st["group"]) + "(" +
-                # str(group["osm_rel_id"]) + ", " + str(dismatches) + "
-                # dismatches, confidence " +
-                # str(in_group_dismatches_conf[stid]) + ")")
+                # we remove if half or more of the stations in this group
+                # are a dismatch
                 removes.append(stid)
 
                 self.or_grp_rm_conf[stid] = (
@@ -311,6 +536,15 @@ class OsmFixer(object):
     def get_group_merge_cands(self, gid):
         group = self.get_group(gid)
 
+        # removed tracknumber stats are always in a new orphan group at the moment
+        if len(group.stats) == 1 and group.osm_rel_id == None and self.stat_is_tracknumber_heur(group.stats[0]):
+            # and we dont want to merge them with any group
+            return {}
+
+        if len(group.stats) == 1 and group.osm_rel_id == None and self.get_station(group.stats[0]).srctype == 2:
+            # we dont want to group with removed relation name stats
+            return {}
+
         # collect groups near any station in group
         groups = {}
 
@@ -321,6 +555,17 @@ class OsmFixer(object):
                 if m_gid == gid:
                     # don't use the station as a merge candidate for itself
                     continue
+
+                m_group = self.get_group(m_gid)
+                # tracknumber stats are always in an orphan group at the moment
+                if len(m_group.stats) == 1 and m_group.osm_rel_id == None and self.stat_is_tracknumber_heur(m_group.stats[0]):
+                    # and we dont want to merge them with any group
+                    continue
+
+                if len(m_group.stats) == 1 and m_group.osm_rel_id == None and self.get_station(m_group.stats[0]).srctype == 2:
+                    # we dont want to group with removed relation name stats
+                    continue
+
                 if m_gid not in groups:
                     groups[m_gid] = 0
 
@@ -380,34 +625,47 @@ class OsmFixer(object):
             self.log.info("== Regroup step %d ==" % i)
             i += 1
 
+    def stat_is_tracknumber_heur(self, stid):
+        # this is a heuristic to catch track numbers in name attributes,
+        # a common mistake in OSM (track numbers should go into ref or local_ref,
+        # the name attribute should contain the name of the station, see
+        # e.g https://wiki.openstreetmap.org/wiki/Tag:public%20transport=platform)
+
+        if stid in self.tracknumbers:
+            return self.tracknumbers[stid]
+
+        name = self.get_station(stid).name
+
+        if len(name) == 0:
+            self.tracknumbers[stid] = False
+            return False
+
+        if len(name) == 1:
+            self.tracknumbers[stid] = True
+            return True
+
+        tokens = re.split(r'\W+', name)
+        if len(tokens) < 3:
+            if len(tokens[-1]) == 1:
+                self.tracknumbers[stid] = True
+                return True
+            if tokens[-1].isnumeric():
+                self.tracknumbers[stid] = True
+                return True
+            for char in tokens[-1]:
+                if char.isdigit():
+                    self.tracknumbers[stid] = True
+                    return True
+
+        self.tracknumbers[stid] = False
+        return False
+
     def regroup_step(self):
         changed = False
         for gid1, group in enumerate(self.features.groups):
             cands = self.get_group_merge_cands(gid1)
 
             if len(cands) and cands[0][1] > self.min_confidence:
-                print("SUGG: Merge those groups with confidence " +
-                      str(cands[0][1]))
-                print("  " + str(gid1))
-                for sid in group.stats:
-                    print("    " +
-                          str(self.get_station(sid)) +
-                          " (to-group simi conf to group " +
-                          str(cands[0][0]) +
-                          ": " +
-                          str(self.stat_to_group_simi(sid, cands[0][0])) +
-                          ")")
-                print("  " + str(cands[0][0]))
-                for sid in self.get_group(cands[0][0]).stats:
-                    print("    " +
-                          str(self.get_station(sid)) +
-                          " (to-group simi conf to group " +
-                          str(gid1) +
-                          ": " +
-                          str(self.stat_to_group_simi(sid, gid1)) +
-                          ")")
-                print()
-
                 self.merge(gid1, cands[0][0])
                 changed = True
         return changed
