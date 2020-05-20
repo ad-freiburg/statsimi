@@ -285,44 +285,40 @@ class OsmFixer(object):
             pass
         else:
             # we have a main group...
-            if sorted_groups[0][0] != osm_st["orig_group_id"]:
+            orig_gid = osm_st["orig_group_id"]
+            target_gid = sorted_groups[0][0]
+            orig_gr = self.get_group(orig_gid)
+            target_gr = self.get_group(target_gid)
+            if target_gid != orig_gid:
                 # ...and it is different than the original group id of this node...
 
-                if self.get_group(osm_st["orig_group_id"]).osm_rel_id:
+                if orig_gr.osm_rel_id:
                     # ...and the original group was a OSM relation group...
-                    if self.get_group(sorted_groups[0][0]).osm_rel_id:
+                    if target_gr.osm_rel_id and (orig_gr.osm_meta_rel_id == None or target_gr.osm_meta_rel_id != orig_gr.osm_meta_rel_id):
                         # ...and the new group is also an OSM relation group
-                        print(
-                            "SUGG: Move %d from relation #%d to relation #%d" %
-                            (osm_nd_id, self.get_group(
-                                osm_st["orig_group_id"]).osm_rel_id, self.get_group(
-                                sorted_groups[0][0]).osm_rel_id))
-                        osm_st["target_group_id"] = sorted_groups[0][0]
+                        # ...and the new group and the old group are not in the same meta group
+                        print("SUGG: Move %d from relation #%d to relation #%d" %
+                            (osm_nd_id, orig_gr.osm_rel_id, target_gr.osm_rel_id))
+                        osm_st["target_group_id"] = target_gid
                     else:
                         # ...and the new group is an orphan group
-                        print(
-                            "SUGG: Move %d out of relation #%d" %
-                            (osm_nd_id, self.get_group(
-                                osm_st["orig_group_id"]).osm_rel_id))
-                        osm_st["target_group_id"] = sorted_groups[0][0]
+                        print("SUGG: Move %d out of relation #%d" %
+                            (osm_nd_id, orig_gr.osm_rel_id))
+                        osm_st["target_group_id"] = target_gid
                 else:
                     # ...and the original group was an orphan group...
-                    if self.get_group(sorted_groups[0][0]).osm_rel_id:
+                    if target_gr.osm_rel_id:
                         # ...and the new group is an OSM relation group
-                        print(
-                            "SUGG: Move %d to relation #%d" %
-                            (osm_nd_id, self.get_group(
-                                sorted_groups[0][0]).osm_rel_id))
-                        osm_st["target_group_id"] = sorted_groups[0][0]
+                        print("SUGG: Move %d to relation #%d" %
+                            (osm_nd_id, target_gr.osm_rel_id))
+                        osm_st["target_group_id"] = target_gid
                     else:
                         # ... and the new group is a non-osm group ...
-                        if len(
-                            self.get_group(
-                                sorted_groups[0][0]).stations):
+                        if len(target_gr.stations):
                             # ... which is NOT an orphan group.
                             print("SUGG: Move %d to new relation of group %d" %
-                                  (osm_nd_id, sorted_groups[0][0]))
-                            osm_st["target_group_id"] = sorted_groups[0][0]
+                                  (osm_nd_id, target_gid))
+                            osm_st["target_group_id"] = target_gid
                         else:
                             # ... which IS an orphan group.
                             pass
