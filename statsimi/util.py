@@ -528,7 +528,8 @@ def pick_args(func, args):
     else:
         argsdef = [(k, None) for k in a.args]
     fitargs = {k: v for k, v in argsdef}
-    del fitargs["self"]
+    if "self" in fitargs:
+        del fitargs["self"]
     fitargs.update((k, args[k]) for k in fitargs.keys() & args.keys())
     return fitargs
 
