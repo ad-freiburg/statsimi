@@ -520,17 +520,21 @@ def pick_args(func, args):
     together with their default values.
     '''
 
-    a = inspect.getargspec(func)
-    if a.defaults is not None:
-        wdef = list(zip(a.args[-len(a.defaults):], a.defaults))
-        wodef = [(k, None) for k in a.args[:-len(a.defaults)]]
-        argsdef = wdef + wodef
-    else:
-        argsdef = [(k, None) for k in a.args]
-    fitargs = {k: v for k, v in argsdef}
-    if "self" in fitargs:
-        del fitargs["self"]
+    sig = inspect.signature(func)
+    fitargs = {}
+    for par, val in sig.parameters.items():
+        fitargs[par] = val.default
+
     fitargs.update((k, args[k]) for k in fitargs.keys() & args.keys())
+
+    rem = []
+    for par, val in fitargs.items():
+        if val is inspect.Parameter.empty:
+            rem.append(par)
+
+    for par in rem:
+        del fitargs[par]
+
     return fitargs
 
 
