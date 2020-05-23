@@ -280,6 +280,7 @@ class OsmParser(object):
                     # collect attrs for group
                     if c2.attrib["k"] in st_name_attrs:
                         for name in c2.attrib["v"].split(";"):
+                            name = " ".join(name.replace('\r', ' ').replace('\n', ' ').split())
                             if len(name) == 0:
                                 continue
                             if not unique or not curGroup.has_name(name):
@@ -404,6 +405,7 @@ class OsmParser(object):
                 for c2 in c1:
                     if c2.attrib["k"] in st_name_attrs:
                         for name in c2.attrib["v"].split(";"):
+                            name = " ".join(name.replace('\r', ' ').replace('\n', ' ').split())
                             if len(name) == 0:
                                 continue
                             if unique and name in unique_st_names:
@@ -543,6 +545,7 @@ class OsmParser(object):
 
             # collect unique station names
             for name, key in names:
+                name = " ".join(name.replace('\r', ' ').replace('\n', ' ').split())
                 if len(name) == 0:
                     continue
                 if unique and name in unique_st_names:
@@ -552,7 +555,7 @@ class OsmParser(object):
                 cur_st_names.append((name, key))
 
                 if key == "name":
-                    orig_nd_name =name
+                    orig_nd_name = name
 
             poly = []
             for nid in self.way_nds[wid]:
