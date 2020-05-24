@@ -293,12 +293,16 @@ class OsmFixer(object):
 
                 if orig_gr.osm_rel_id:
                     # ...and the original group was a OSM relation group...
-                    if target_gr.osm_rel_id and (orig_gr.osm_meta_rel_id == None or target_gr.osm_meta_rel_id != orig_gr.osm_meta_rel_id):
+                    if target_gr.osm_rel_id:
                         # ...and the new group is also an OSM relation group
-                        # ...and the new group and the old group are not in the same meta group
-                        print("SUGG: Move %d from relation #%d to relation #%d" %
-                            (osm_nd_id, orig_gr.osm_rel_id, target_gr.osm_rel_id))
-                        osm_st["target_group_id"] = target_gid
+                        if orig_gr.osm_meta_rel_id == None or target_gr.osm_meta_rel_id != orig_gr.osm_meta_rel_id:
+                            # ...and the new group and the old group are not in the same meta group
+                            print("SUGG: Move %d from relation #%d to relation #%d" %
+                                (osm_nd_id, orig_gr.osm_rel_id, target_gr.osm_rel_id))
+                            osm_st["target_group_id"] = target_gid
+                        else:
+                            # ... and they are in the same meta group, don't suggest anything
+                            pass
                     else:
                         # ...and the new group is an orphan group
                         print("SUGG: Move %d out of relation #%d" %
