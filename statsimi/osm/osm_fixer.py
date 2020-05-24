@@ -400,7 +400,7 @@ class OsmFixer(object):
                                        "\t" +
                                        str(conf) +
                                        "\t" +
-                                       str(-fst.gid) +
+                                       str(-st["orig_group_id"]) +
                                        "\n")
 
             file.write("\n")
