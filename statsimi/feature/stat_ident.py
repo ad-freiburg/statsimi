@@ -30,6 +30,7 @@ class StatIdent(object):
         self.name = name
         self.osmnid = osmnid
         self.gid = gid
+        self.orig_gid = gid
         self.orig_nd_name = orig_nd_name
         self.spice_id = spice_id
 

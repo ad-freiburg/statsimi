@@ -265,8 +265,7 @@ class OsmFixer(object):
                 if len(group.stats) == 1 and group.osm_rel_id == None and self.stat_is_tracknumber_heur(n_stat_id):
                     # track mistakes are marked by an attr error with the attribute itself!
                     osm_st["wrong_attrs"][n_stat.name_attr].append((n_stat_id, 0.6))
-                    print(
-                        "  ('%s' = '%s' seems to be a track number!)" %
+                    print("  ('%s' = '%s' seems to be a track number!)" %
                         (n_stat.name_attr, n_stat.name))
 
         group_counts = {}
@@ -400,7 +399,9 @@ class OsmFixer(object):
                                        "\t" +
                                        str(conf) +
                                        "\t" +
-                                       str(-st["orig_group_id"]) +
+                                       # we use the original gid here because the attribute station may
+                                       # have been moved to another relation
+                                       str(-fst.orig_gid) +
                                        "\n")
 
             file.write("\n")
