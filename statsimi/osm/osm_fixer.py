@@ -450,6 +450,15 @@ class OsmFixer(object):
 
             file.write("\n")
 
+            # fifth, write meta group (stop_area_groups)
+            for gid, group in enumerate(self.features.groups):
+                if group.osm_meta_rel_id:
+                    file.write(str(gid) + "\t" + str(group.osm_meta_rel_id))
+                    file.write("\n")
+
+            file.write("\n")
+
+
     def analyze_wrong_groups(self, model, y_input, y_proba):
 
         in_group_dismatches = [0] * len(self.features.stations)
@@ -549,8 +558,11 @@ class OsmFixer(object):
         # collect groups near any station in group
         groups = {}
 
+        a = False
+
         for _, sid1 in enumerate(group.stats):
             assert(self.get_station(sid1).gid == gid)
+
             for _, (sid2, simi_conf) in enumerate(self.simi_idx[sid1]):
                 m_gid = self.get_station(sid2).gid
                 if m_gid == gid:
@@ -586,7 +598,12 @@ class OsmFixer(object):
         minor_g = self.get_group(gid2)
         minor_gid = gid2
 
-        if len(master_g.stats) < len(minor_g.stats):
+        minor_in_meta = minor_g.osm_meta_rel_id and not master_g.osm_meta_rel_id
+        master_in_meta = master_g.osm_meta_rel_id and not minor_g.osm_meta_rel_id
+
+        # always merge into a meta group, or into the larger
+
+        if minor_in_meta or (not master_in_meta and len(master_g.stats) < len(minor_g.stats)):
             master_g = minor_g
             master_gid = minor_gid
             minor_g = self.get_group(gid1)
@@ -663,10 +680,31 @@ class OsmFixer(object):
 
     def regroup_step(self):
         changed = False
+        merge_cands = []
+
+        # collect the best merge candidate for each group
         for gid1, group in enumerate(self.features.groups):
             cands = self.get_group_merge_cands(gid1)
 
             if len(cands) and cands[0][1] > self.min_confidence:
-                self.merge(gid1, cands[0][0])
-                changed = True
+                merge_cands.append((gid1, cands[0][0], cands[0][1]))
+
+        tainted = set()
+
+        # order by confidence, highest confidence first
+        merge_cands.sort(key=lambda x:x[2],reverse=True)
+
+        # merge candidates ordered by confidence. if a
+        # candidate has been changed during the process, mark as
+        # tainted and do not merge in this round
+        for (gid1, gid2, score) in merge_cands:
+            if gid1 in tainted or gid2 in tainted:
+                continue
+
+            self.merge(gid1, gid2)
+            changed = True
+
+            tainted.add(gid1)
+            tainted.add(gid2)
+
         return changed
