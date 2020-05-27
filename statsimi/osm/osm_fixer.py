@@ -6,6 +6,8 @@ Patrick Brosi <brosi@informatik.uni-freiburg.de>
 '''
 
 from statsimi.feature.stat_group import StatGroup
+from itertools import repeat
+import numpy as np
 import logging
 import re
 
@@ -54,6 +56,17 @@ class OsmFixer(object):
             model.set_lookup_idx(self.test_idx)
 
         y_proba = model.predict_proba(X_input)
+
+        # make sure both classes are present in the y_proba, even
+        # if only one occurred in the training data
+        if y_proba.shape[1] != 2:
+            all_classes = np.array([0, 1])
+            # Get the probabilities for learnt classes
+            # Create the result matrix, where all values are initially zero
+            new_prob = np.zeros((y_proba.shape[0], all_classes.size))
+            # Set the columns corresponding to clf.classes_
+            new_prob[:, all_classes.searchsorted(model.classes_)] = y_proba
+            y_proba = new_prob
 
         self.build_simi_index(model, y_proba)
 
@@ -125,7 +138,7 @@ class OsmFixer(object):
         if len(osm_rel["name_stations"]) == 0:
             # no name stations, there was no name attribute for this
             # relations
-            print("SUGG: Add 'name' attribute to station relation %d" % osm_rel_id)
+            #  print("SUGG: Add 'name' attribute to station relation %d" % osm_rel_id)
             return
 
         for name in osm_rel["name_stations"]:
@@ -172,12 +185,12 @@ class OsmFixer(object):
 
             # conf is their average deletion confidence
 
-            print(
-                "INCO: in rel #%d, attribute '%s'='%s' did not match (conf = %.2f)" %
-                (osm_rel_id,
-                 n_stat.name_attr,
-                 n_stat.name,
-                 conf))
+            #  print(
+                #  "INCO: in rel #%d, attribute '%s'='%s' did not match (conf = %.2f)" %
+                #  (osm_rel_id,
+                 #  n_stat.name_attr,
+                 #  n_stat.name,
+                 #  conf))
 
             osm_rel["wrong_attrs"][name] = []
 
@@ -185,10 +198,10 @@ class OsmFixer(object):
                 n_stat_2 = self.get_station(n_stat_id2)
                 conf = individual_confs[n_stat_id2] / individual_counts[n_stat_id2]
                 osm_rel["wrong_attrs"][name].append((n_stat_id2, conf))
-                print("  no match for '%s'='%s' (conf = %.2f)" %
-                    (n_stat_2.name_attr,
-                     n_stat_2.name,
-                     conf))
+                #  print("  no match for '%s'='%s' (conf = %.2f)" %
+                    #  (n_stat_2.name_attr,
+                     #  n_stat_2.name,
+                     #  conf))
 
     def update_osm_stations(self):
         for osm_nd_id, osm_st in self.osm_stations.items():
@@ -198,19 +211,19 @@ class OsmFixer(object):
         if len(osm_st["name_stations"]) == 0:
             # no name stations, there was no name attribute for this
             # station
-            print("SUGG: Add 'name' attribute to station node %d" % osm_nd_id)
+            #  print("SUGG: Add 'name' attribute to node %d" % osm_nd_id)
             return
 
         for n_stat_id in osm_st["name_stations"]:
             n_stat = self.get_station(n_stat_id)
             if n_stat.gid != osm_st["orig_group_id"] and n_stat_id in self.or_grp_rm_conf:
-                print(
-                    "INCO: in node #%d, attribute '%s'='%s' did not match group #%d (conf = %.2f)" %
-                    (osm_nd_id,
-                     n_stat.name_attr,
-                     n_stat.name,
-                     n_stat.gid,
-                     self.or_grp_rm_conf[n_stat_id][0]))
+                #  print(
+                    #  "INCO: in node #%d, attribute '%s'='%s' did not match group #%d (conf = %.2f)" %
+                    #  (osm_nd_id,
+                     #  n_stat.name_attr,
+                     #  n_stat.name,
+                     #  n_stat.gid,
+                     #  self.or_grp_rm_conf[n_stat_id][0]))
 
                 osm_st["wrong_attrs"][n_stat.name_attr] = []
 
@@ -246,27 +259,27 @@ class OsmFixer(object):
                         continue
 
                     osm_st["wrong_attrs"][n_stat.name_attr].append((n_stat_id2, conf))
-                    print("  no match for '%s'='%s' (conf = %.2f)" %
-                        (n_stat_2.name_attr,
-                         n_stat_2.name,
-                         conf))
+                    #  print("  no match for '%s'='%s' (conf = %.2f)" %
+                        #  (n_stat_2.name_attr,
+                         #  n_stat_2.name,
+                         #  conf))
 
                 for gid in individual_counts:
                     for attr_name in individual_counts[gid]:
                         stat = individual_stats[gid][attr_name]
                         conf = individual_confs[gid][attr_name] / individual_counts[gid][attr_name]
                         osm_st["wrong_attrs"][n_stat.name_attr].append((stat, conf))
-                        print("  no match for '%s'='%s' (conf = %.2f)" %
-                            (attr_name,
-                             self.get_station(stat).name,
-                             conf))
+                        #  print("  no match for '%s'='%s' (conf = %.2f)" %
+                            #  (attr_name,
+                             #  self.get_station(stat).name,
+                             #  conf))
 
                 group = self.get_group(n_stat.gid)
                 if len(group.stats) == 1 and group.osm_rel_id == None and self.stat_is_tracknumber_heur(n_stat_id):
                     # track mistakes are marked by an attr error with the attribute itself!
                     osm_st["wrong_attrs"][n_stat.name_attr].append((n_stat_id, 0.6))
-                    print("  ('%s' = '%s' seems to be a track number!)" %
-                        (n_stat.name_attr, n_stat.name))
+                    #  print("  ('%s' = '%s' seems to be a track number!)" %
+                        #  (n_stat.name_attr, n_stat.name))
 
         group_counts = {}
         for n_stat_id in osm_st["name_stations"]:
@@ -297,30 +310,30 @@ class OsmFixer(object):
                         # ...and the new group is also an OSM relation group
                         if orig_gr.osm_meta_rel_id == None or target_gr.osm_meta_rel_id != orig_gr.osm_meta_rel_id:
                             # ...and the new group and the old group are not in the same meta group
-                            print("SUGG: Move %d from relation #%d to relation #%d" %
-                                (osm_nd_id, orig_gr.osm_rel_id, target_gr.osm_rel_id))
+                            #  print("SUGG: Move %d from relation #%d to relation #%d" %
+                                #  (osm_nd_id, orig_gr.osm_rel_id, target_gr.osm_rel_id))
                             osm_st["target_group_id"] = target_gid
                         else:
                             # ... and they are in the same meta group, don't suggest anything
                             pass
                     else:
                         # ...and the new group is an orphan group
-                        print("SUGG: Move %d out of relation #%d" %
-                            (osm_nd_id, orig_gr.osm_rel_id))
+                        #  print("SUGG: Move %d out of relation #%d" %
+                            #  (osm_nd_id, orig_gr.osm_rel_id))
                         osm_st["target_group_id"] = target_gid
                 else:
                     # ...and the original group was an orphan group...
                     if target_gr.osm_rel_id:
                         # ...and the new group is an OSM relation group
-                        print("SUGG: Move %d to relation #%d" %
-                            (osm_nd_id, target_gr.osm_rel_id))
+                        #  print("SUGG: Move %d to relation #%d" %
+                            #  (osm_nd_id, target_gr.osm_rel_id))
                         osm_st["target_group_id"] = target_gid
                     else:
                         # ... and the new group is a non-osm group ...
                         if len(target_gr.stations):
                             # ... which is NOT an orphan group.
-                            print("SUGG: Move %d to new relation of group %d" %
-                                  (osm_nd_id, target_gid))
+                            #  print("SUGG: Move %d to new relation of group %d" %
+                                  #  (osm_nd_id, target_gid))
                             osm_st["target_group_id"] = target_gid
                         else:
                             # ... which IS an orphan group.
@@ -636,7 +649,7 @@ class OsmFixer(object):
         return tot_conf / len(group.stats)
 
     def regroup(self):
-        max_steps = 10
+        max_steps = 500
         i = 0
 
         while i < max_steps and self.regroup_step():
