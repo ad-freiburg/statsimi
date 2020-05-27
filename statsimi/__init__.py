@@ -13,6 +13,7 @@ from .feature.model_builder import ModelBuilder
 from .serv.classifier_server import ClassifierServer
 import pickle
 import argparse
+import time
 import logging
 FORMAT = "[%(asctime)-15s] (%(name)-8s) %(levelname)-8s: %(message)s"
 logging.basicConfig(level=logging.INFO, format=FORMAT)
@@ -293,7 +294,7 @@ def main():
         osmfixer = OsmFixer(vars(args), test_data, test_idx)
         osmfixer.analyze(model)
 
-        logging.info(" === Printing fix result to " + args.fix_out + " ===")
+        logging.info(" === Printing fix result to %s ===" % args.fix_out)
         osmfixer.print_to_file(args.fix_out)
 
     if args.cmd[0] == "http":
