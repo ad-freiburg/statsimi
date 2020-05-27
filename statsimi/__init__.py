@@ -25,6 +25,7 @@ class ArgFormat(argparse.ArgumentDefaultsHelpFormatter,
 
 
 def main():
+    start = time.time()
     parser = argparse.ArgumentParser(
         prog="statsimi",
         formatter_class=ArgFormat,
@@ -293,6 +294,8 @@ def main():
 
         osmfixer = OsmFixer(vars(args), test_data, test_idx)
         osmfixer.analyze(model)
+
+        logging.info(" === Took %d seconds ===" % (time.time() - start))
 
         logging.info(" === Printing fix result to %s ===" % args.fix_out)
         osmfixer.print_to_file(args.fix_out)
