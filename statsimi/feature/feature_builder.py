@@ -315,7 +315,7 @@ class FeatureBuilder(object):
 
         # if we are not re-using, store the ngrams first
         if not self.reuse_ngram_idx:
-            for sid, _ in enumerate(self._stats):
+            for sid in range(len(self._stats)):
                 self.store_ngrams_for(sid)
 
         # a is a list [(grid, (gram, occs), ..], sorted asc by occs
@@ -337,7 +337,7 @@ class FeatureBuilder(object):
 
         # if we are re-using, store the ngrams now
         if self.reuse_ngram_idx:
-            for sid, _ in enumerate(self._stats):
+            for sid in range(len(self._stats)):
                 self.store_ngrams_for(sid)
 
         for sid, st in enumerate(self._stats):
@@ -374,9 +374,7 @@ class FeatureBuilder(object):
         sidx = StationIdx(1000, self.bbox)
         matched = [set() for i in range(len(self._stats))]
 
-        for sid, stat in enumerate(self._stats):
-            stat = self._stats[sid]
-
+        for stat in self._stats:
             if stat.lon == None:
                 sidx.add_stat_group_poly(stat.gid, stat.poly)
             else:

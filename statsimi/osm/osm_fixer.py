@@ -10,11 +10,12 @@ from itertools import repeat
 import numpy as np
 import logging
 import re
-
+from timeit import default_timer as timer
 
 class OsmFixer(object):
     '''
-    TODO
+    Prints a file containing errors and fix suggestions for an input
+    OSM file
     '''
 
     def __init__(self, cfg, features, test_idx=None):
@@ -275,7 +276,7 @@ class OsmFixer(object):
                              #  conf))
 
                 group = self.get_group(n_stat.gid)
-                if len(group.stats) == 1 and group.osm_rel_id == None and self.stat_is_tracknumber_heur(n_stat_id):
+                if len(group.stats) == 1 and group.osm_rel_id == None and self.is_tracknum(n_stat_id):
                     # track mistakes are marked by an attr error with the attribute itself!
                     osm_st["wrong_attrs"][n_stat.name_attr].append((n_stat_id, 0.6))
                     #  print("  ('%s' = '%s' seems to be a track number!)" %
@@ -378,7 +379,7 @@ class OsmFixer(object):
                         osm_grp = self.osm_relations[group.osm_rel_id]
 
                         # attributes in group
-                        for _, name in enumerate(osm_grp["name_stations"]):
+                        for name in osm_grp["name_stations"]:
                             file.write("\t" + name +
                                        "\t" + self.get_station(osm_grp["name_stations"][name][0]).name)
                 else:
@@ -394,7 +395,7 @@ class OsmFixer(object):
 
                 # attributes in name stations
                 for (attr_name, unmatches) in st["wrong_attrs"].items():
-                    for _, (sid, conf) in enumerate(unmatches):
+                    for (sid, conf) in unmatches:
                         fst = self.get_station(sid)
                         if fst.srctype == 1:
                             file.write(str(id) +
@@ -431,7 +432,7 @@ class OsmFixer(object):
 
                 # attributes in name stations
                 for (attr_name, unmatches) in rel["wrong_attrs"].items():
-                    for _, (sid, conf) in enumerate(unmatches):
+                    for (sid, conf) in unmatches:
                         fst = self.get_station(sid)
                         if fst.srctype == 1:
                             # no match to another station
@@ -546,63 +547,65 @@ class OsmFixer(object):
             if self.test_idx is not None:
                 lid = self.test_idx[id]
 
+            if match_p < 0.01:
+                # skip irrelevant stations
+                continue
+
             stid1 = self.features.pairs[lid][0]
             stid2 = self.features.pairs[lid][1]
+
+            gid1 = self.get_station(stid1).gid
+            gid2 = self.get_station(stid2).gid
 
             self.simi_idx[stid1].append((stid2, match_p))
             self.simi_idx[stid2].append((stid1, match_p))
 
-        # sort buckets by id
-        for id, buck in enumerate(self.simi_idx):
-            self.simi_idx[id] = sorted(buck, key=lambda a: a[0])
-
-    def get_group_merge_cands(self, gid):
+    def merge_cand(self, gid):
         group = self.get_group(gid)
+        n_gr_stats = len(group.stats)
 
-        # removed tracknumber stats are always in a new orphan group at the moment
-        if len(group.stats) == 1 and group.osm_rel_id == None and self.stat_is_tracknumber_heur(group.stats[0]):
-            # and we dont want to merge them with any group
-            return {}
+        if n_gr_stats == 0:
+            return None
 
-        if len(group.stats) == 1 and group.osm_rel_id == None and self.get_station(group.stats[0]).srctype == 2:
-            # we dont want to group with removed relation name stats
-            return {}
+        if n_gr_stats == 1 and group.osm_rel_id == None:
+            if self.get_station(group.stats[0]).srctype == 2:
+                # we dont want to group with removed relation name stats
+                return None
+
+            if self.is_tracknum(group.stats[0]):
+                # removed tracknumber stats are always in a new orphan group at the moment
+                # and we dont want to merge them with any group
+                return None
 
         # collect groups near any station in group
         groups = {}
 
-        a = False
-
-        for _, sid1 in enumerate(group.stats):
-            assert(self.get_station(sid1).gid == gid)
-
-            for _, (sid2, simi_conf) in enumerate(self.simi_idx[sid1]):
+        for sid1 in group.stats:
+            for (sid2, simi_conf) in self.simi_idx[sid1]:
                 m_gid = self.get_station(sid2).gid
+
                 if m_gid == gid:
-                    # don't use the station as a merge candidate for itself
                     continue
 
                 m_group = self.get_group(m_gid)
-                # tracknumber stats are always in an orphan group at the moment
-                if len(m_group.stats) == 1 and m_group.osm_rel_id == None and self.stat_is_tracknumber_heur(m_group.stats[0]):
-                    # and we dont want to merge them with any group
-                    continue
+                n_m_gr_stats = len(m_group.stats)
 
-                if len(m_group.stats) == 1 and m_group.osm_rel_id == None and self.get_station(m_group.stats[0]).srctype == 2:
-                    # we dont want to group with removed relation name stats
-                    continue
+                if n_m_gr_stats == 1 and m_group.osm_rel_id == None:
+                    if self.get_station(m_group.stats[0]).srctype == 2:
+                        # we dont want to group with removed relation name stats
+                        continue
 
-                if m_gid not in groups:
-                    groups[m_gid] = 0
+                    if self.is_tracknum(m_group.stats[0]):
+                        # tracknumber stats are always in an orphan group at the moment
+                        # and we dont want to merge them with any group
+                        continue
 
-                groups[m_gid] += simi_conf
+                groups[m_gid] = groups.get(m_gid, 0) + simi_conf / (n_gr_stats * n_m_gr_stats)
 
-        for m_gid in groups:
-            groups[m_gid] = groups[m_gid] / \
-                (len(group.stats) *
-                 len(self.get_group(m_gid).stats))
+        if len(groups) == 0:
+            return None
 
-        return sorted(groups.items(), key=lambda x: x[1], reverse=True)
+        return max(groups.items(), key=lambda x: x[1])
 
     def merge(self, gid1, gid2):
         # use the larger group as master
@@ -615,14 +618,13 @@ class OsmFixer(object):
         master_in_meta = master_g.osm_meta_rel_id and not minor_g.osm_meta_rel_id
 
         # always merge into a meta group, or into the larger
-
         if minor_in_meta or (not master_in_meta and len(master_g.stats) < len(minor_g.stats)):
             master_g = minor_g
             master_gid = minor_gid
             minor_g = self.get_group(gid1)
             minor_gid = gid1
 
-        for _, sid in enumerate(minor_g.stats):
+        for sid in minor_g.stats:
             self.get_station(sid).gid = master_gid
             master_g.add_station(sid)
 
@@ -634,61 +636,78 @@ class OsmFixer(object):
         if not master_g.osm_rel_id:
             master_g.osm_rel_id = 1
 
-    def stat_to_group_simi(self, sid, gid):
-        group = self.get_group(gid)
-        tot_conf = 0
-
-        # TODO: use the fact that simi_idx buckets are sorted here
-
-        for _, sid1 in enumerate(group.stats):
-            for _, (sid2, simi_conf) in enumerate(self.simi_idx[sid1]):
-                if sid2 == sid:
-                    tot_conf += simi_conf
-                    break
-
-        return tot_conf / len(group.stats)
-
     def regroup(self):
         max_steps = 500
         i = 0
 
+        start = timer()
         while i < max_steps and self.regroup_step():
-            self.log.info("== Regroup step %d ==" % i)
+            self.log.info("== Regroup step %d, took %fs ==" % (i, timer() - start))
+            start = timer()
             i += 1
 
-    def stat_is_tracknumber_heur(self, stid):
-        # this is a heuristic to catch track numbers in name attributes,
-        # a common mistake in OSM (track numbers should go into ref or local_ref,
-        # the name attribute should contain the name of the station, see
-        # e.g https://wiki.openstreetmap.org/wiki/Tag:public%20transport=platform)
-
+    def is_tracknum(self, stid):
         if stid in self.tracknumbers:
             return self.tracknumbers[stid]
 
-        name = self.get_station(stid).name
+        istr = self.name_is_tracknum(self.get_station(stid).name)
+        self.tracknumbers[stid] = istr
+        return istr
+
+    def name_is_tracknum(self, name):
+        '''
+        this is a heuristic to catch track numbers in name attributes,
+        a common mistake in OSM (track numbers should go into ref or local_ref,
+        the name attribute should contain the name of the station, see
+        e.g https://wiki.openstreetmap.org/wiki/Tag:public%20transport=platform)
+
+        >>> of = OsmFixer(None, None)
+        >>> of.name_is_tracknum("Gleis 1")
+        True
+        >>> of.name_is_tracknum("12a")
+        True
+        >>> of.name_is_tracknum("A")
+        True
+        >>> of.name_is_tracknum("A2")
+        True
+        >>> of.name_is_tracknum("Gleis A2")
+        True
+        >>> of.name_is_tracknum("23rd Street")
+        False
+        >>> of.name_is_tracknum("")
+        False
+        >>> of.name_is_tracknum("+")
+        False
+        >>> of.name_is_tracknum("&")
+        False
+        >>> of.name_is_tracknum("Voie&")
+        False
+        >>> of.name_is_tracknum("Voie &")
+        False
+        '''
 
         if len(name) == 0:
-            self.tracknumbers[stid] = False
             return False
 
-        if len(name) == 1:
-            self.tracknumbers[stid] = True
+        if len(name) == 1 and (name.isalpha() or name.isnumeric()):
             return True
 
         tokens = re.split(r'\W+', name)
-        if len(tokens) < 3:
-            if len(tokens[-1]) == 1:
-                self.tracknumbers[stid] = True
+        if len(tokens) < 3 and len(tokens[-1]) > 0:
+            if len(tokens[-1]) == 1 and tokens[-1][0].isalpha():
                 return True
             if tokens[-1].isnumeric():
-                self.tracknumbers[stid] = True
                 return True
+            nums = 0
+            alphs = 0
             for char in tokens[-1]:
                 if char.isdigit():
-                    self.tracknumbers[stid] = True
-                    return True
+                    nums += 1
+                elif char.isalpha():
+                    alphs += 1
+            if alphs - nums < 2 and len(tokens[-1]) - alphs - nums == 0:
+                return True
 
-        self.tracknumbers[stid] = False
         return False
 
     def regroup_step(self):
@@ -696,11 +715,11 @@ class OsmFixer(object):
         merge_cands = []
 
         # collect the best merge candidate for each group
-        for gid1, group in enumerate(self.features.groups):
-            cands = self.get_group_merge_cands(gid1)
+        for gid1 in range(len(self.features.groups)):
+            cand = self.merge_cand(gid1)
 
-            if len(cands) and cands[0][1] > self.min_confidence:
-                merge_cands.append((gid1, cands[0][0], cands[0][1]))
+            if cand and cand[1] > self.min_confidence:
+                merge_cands.append((gid1, cand[0], cand[1]))
 
         tainted = set()
 
