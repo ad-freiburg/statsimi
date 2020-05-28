@@ -92,16 +92,17 @@ st_name_attrs = [
     "name",
     "uic_name",
     "alt_name",
-    #    "int_name",
+    "int_name",
     "loc_name",
     "nat_name",
     "official_name",
-    #    "old_name",
+    "old_name",
     "reg_name",
     "ref_name",
     "short_name",
     "sorting_name",
-    "gtfs_name"
+    "gtfs_name",
+    "gtfs:name"
 ]
 
 
