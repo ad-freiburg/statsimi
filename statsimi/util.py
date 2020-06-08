@@ -490,7 +490,7 @@ def print_classification_report(*args, digits=5):
                 cell = "%{0}.{1}f".format(colw, digits) % mat[i][j]
             print(cell, end=" ")
         print()
-    print()
+    print(flush=True)
 
 
 def print_confusion_matrix(y_test, y_pred):
@@ -511,7 +511,8 @@ def print_confusion_matrix(y_test, y_pred):
         for j in range(len(lbls)):
             cell = "%{0}.0f".format(colw) % mat[i, j]
             print(cell, end=" ")
-        print()
+        print(flush=True)
+
 
 
 def pick_args(func, args):
@@ -545,7 +546,6 @@ class FileList(object):
     '''
 
     def __init__(self, w, fname):
-        #  print("Opening " + fname)
         self.file = open(fname, "wb", buffering=1024 * 1000 * 100)
         # write something as we cannot map empty file
         self.fname = fname

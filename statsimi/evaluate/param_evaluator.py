@@ -93,11 +93,11 @@ class ParamEvaluator(object):
         self.log.info("===")
 
         if test_data is None:
-            model, ngram_model, _, X_test, y_test, test_idx = mb.build_model(
+            model, ngram_model, _, _, X_test, y_test, test_idx = mb.build_model(
                 train_data, self.p, modelargs)
             test_data = train_data
         else:
-            model, ngram_model, _, _, _, _ = mb.build_model(
+            model, ngram_model, _, _, _, _, _ = mb.build_model(
                 train_data, self.p, modelargs)
 
         args = {"X": X_test, "test_data": test_data, "test_data_idx": test_idx}
@@ -165,7 +165,7 @@ class ParamEvaluator(object):
                 test_data = None
 
                 if self.testfiles:
-                    test_data = mb.build_from_file(self.testfiles, args=fbargs)
+                    test_data = mb.build_from_file(self.testfiles, fbargs)
                     tm = test_data.get_matrix()
                     y_test = tm[:, -1].toarray().ravel()
                     X_test = tm[:, :-1]

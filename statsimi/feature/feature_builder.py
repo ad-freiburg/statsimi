@@ -622,7 +622,7 @@ class FeatureBuilder(object):
                     wsid2 = st2.spice_id
 
                 if st1.lat == None:
-                    print("TODO: Cannot write polyons to station file")
+                    self.log.warn("TODO: Cannot write polygons to station file")
                 else:
                     d = '\t'.join([str(wsid1), st1.name, str(st1.lat),
                                    str(st1.lon), str(wsid2), st2.name,

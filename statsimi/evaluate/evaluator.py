@@ -32,6 +32,7 @@ class Evaluator(object):
         self.y_test = y_test
         self.test_idx = test_idx
         self.test_data = test_data
+        self.log = logging.getLogger('eval')
 
     def evaluate(self):
         args = {
@@ -43,7 +44,7 @@ class Evaluator(object):
 
     def print_typical(self, res, compstr):
         if len(res) == 0:
-            print("  (none)")
+            self.log.info("  (none)")
             return
 
         samples = np.random.choice(res, 20)
@@ -54,26 +55,26 @@ class Evaluator(object):
             pair = self.test_data.pairs[sample_lookup]
             st1 = self.test_data.stations[pair[0]]
             st2 = self.test_data.stations[pair[1]]
-            print("  Predicted " + str(st1) + " " + compstr + " " + str(st2))
+            self.log.info("  Predicted " + str(st1) + " " + compstr + " " + str(st2))
 
     def print_report(self, y_pred):
-        print("\n == Typical FALSE negatives ==\n")
+        self.log.info("\n == Typical FALSE negatives ==\n")
         t = np.where(np.logical_and(self.y_test != y_pred, y_pred == 0))
         self.print_typical(t[0], "!=")
 
-        print("\n == Typical FALSE positives ==\n")
+        self.log.info("\n == Typical FALSE positives ==\n")
         t = np.where(np.logical_and(self.y_test != y_pred, y_pred == 1))
         self.print_typical(t[0], "==")
 
-        print("\n == Typical TRUE negatives ==\n")
+        self.log.info("\n == Typical TRUE negatives ==\n")
         t = np.where(np.logical_and(self.y_test == y_pred, y_pred == 0))
         self.print_typical(t[0], "!=")
 
-        print("\n == Typical TRUE positives ==\n")
+        self.log.info("\n == Typical TRUE positives ==\n")
         t = np.where(np.logical_and(self.y_test == y_pred, y_pred == 1))
         self.print_typical(t[0], "==")
 
-        print("\n == Confusion matrix ==\n")
+        self.log.info("\n == Confusion matrix ==\n")
         print_confusion_matrix(self.y_test, y_pred)
 
         conf_matrix = confusion_matrix(self.y_test, y_pred)
