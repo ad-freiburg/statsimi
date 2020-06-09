@@ -87,7 +87,7 @@ class ModelBuilder(object):
             if method == "rf":
                 args = {"n_estimators": 100, "random_state": 0,
                         "verbose": 1, "n_jobs": -1}
-                modelargs.update(args)[0]
+                modelargs.update(args)
                 args = pick_args(RandomForestClassifier.__init__, modelargs)
                 models.append(RandomForestClassifier(**args))
             elif method == "mlp":

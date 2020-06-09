@@ -65,40 +65,20 @@ class ParamEvaluator(object):
         c.update(b)
         return c
 
-    def run(
-            self,
-            run,
-            mb,
-            X_test,
-            y_test,
-            test_idx,
-            train_data,
-            test_data,
-            modelargs,
-            fbargs,
-            precs,
-            recs,
-            f1s,
-            p_neg,
-            r_neg,
-            f1_neg,
-            p_pos,
-            r_pos,
-            f1_pos,
-            conf_ms):
+    def run(self, run, mb, X_test, y_test, test_idx, train_data, test_data,
+            modelargs, fbargs, precs, recs, f1s, p_neg, r_neg, f1_neg,
+            p_pos, r_pos, f1_pos, conf_ms):
         self.log.info("===")
-        self.log.info(" Running (" + str(run + 1) + "/" + str(self.runs) + ")")
+        self.log.info(" Running #" + str(run + 1) + "/" + str(self.runs))
         self.log.info("    fbargs=" + repr(fbargs))
         self.log.info("    modelargs=" + repr(modelargs))
         self.log.info("===")
 
         if test_data is None:
-            model, ngram_model, _, _, X_test, y_test, test_idx = mb.build_model(
-                train_data, self.p, modelargs)
+            model, ngram_model, _, _, X_test, y_test, test_idx = mb.build_model(train_data, self.p, modelargs)
             test_data = train_data
         else:
-            model, ngram_model, _, _, _, _, _ = mb.build_model(
-                train_data, self.p, modelargs)
+            model, ngram_model, _, _, _, _, _ = mb.build_model(train_data, self.p, modelargs)
 
         args = {"X": X_test, "test_data": test_data, "test_data_idx": test_idx}
 
@@ -163,13 +143,19 @@ class ParamEvaluator(object):
                 fbargs = self.merge_pars(fbargs_base, fbargs_cur)
                 train_data = mb.build_from_file(self.trainfiles, fbargs)
                 test_data = None
+                y_test = None
+                X_test = None
+                test_idx = None
 
+                # if testfiles are given, build the test data from them
+                # if they are not given, test_data will be set to the
+                # train data in run() and y_test and X_test will be based
+                # on the part of train data that is not used for training
                 if self.testfiles:
                     test_data = mb.build_from_file(self.testfiles, fbargs)
                     tm = test_data.get_matrix()
                     y_test = tm[:, -1].toarray().ravel()
                     X_test = tm[:, :-1]
-                    test_idx = None
 
                 for modelargs_cur in modelargs_prod:
                     modelargs = self.merge_pars(modelargs_base, modelargs_cur)
@@ -178,25 +164,9 @@ class ParamEvaluator(object):
                         fbargs_col.append(fbargs)
                         modelargs_col.append(modelargs)
 
-                    self.run(
-                        run,
-                        mb,
-                        X_test,
-                        y_test,
-                        test_idx,
-                        train_data,
-                        test_data,
-                        modelargs,
-                        fbargs,
-                        precs,
-                        recs,
-                        f1s,
-                        p_neg,
-                        r_neg,
-                        f1_neg,
-                        p_pos,
-                        r_pos,
-                        f1_pos,
+                    self.run(run, mb, X_test, y_test, test_idx, train_data,
+                        test_data, modelargs, fbargs, precs, recs, f1s,
+                        p_neg, r_neg, f1_neg, p_pos, r_pos, f1_pos,
                         confusion_matrices)
 
         # averaging values
@@ -212,6 +182,7 @@ class ParamEvaluator(object):
         r_neg_avg = np.average(np.array(r_neg), axis=0)
         f1_neg_avg = np.average(np.array(f1_neg), axis=0)
 
+        # print results
         self.log.info(" == Done == ")
         self.log.info("  Best scores, avg'ed from %d runs:" % self.runs)
         self.log.info("   BEST F1 'SIMILAR' scores: "
@@ -299,17 +270,11 @@ class ParamEvaluator(object):
             plt.tight_layout(pad=0.25)
 
             # pgf for inclusion in LaTeX
-            plt.savefig(
-                os.path.join(
-                    self.outputdir,
-                    'result.pgf'),
+            plt.savefig(os.path.join(self.outputdir, 'result.pgf'),
                 bbox_inches='tight',
                 pad_inches=0)
 
             # PDF for inspection
-            plt.savefig(
-                os.path.join(
-                    self.outputdir,
-                    'result.pdf'),
+            plt.savefig(os.path.join(self.outputdir, 'result.pdf'),
                 bbox_inches='tight',
                 pad_inches=0)

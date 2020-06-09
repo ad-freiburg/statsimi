@@ -32,7 +32,6 @@ class Evaluator(object):
         self.y_test = y_test
         self.test_idx = test_idx
         self.test_data = test_data
-        self.log = logging.getLogger('eval')
 
     def evaluate(self):
         args = {
@@ -44,7 +43,7 @@ class Evaluator(object):
 
     def print_typical(self, res, compstr):
         if len(res) == 0:
-            self.log.info("  (none)")
+            print("  (none)", flush=True)
             return
 
         samples = np.random.choice(res, 20)
@@ -55,26 +54,26 @@ class Evaluator(object):
             pair = self.test_data.pairs[sample_lookup]
             st1 = self.test_data.stations[pair[0]]
             st2 = self.test_data.stations[pair[1]]
-            self.log.info("  Predicted " + str(st1) + " " + compstr + " " + str(st2))
+            print("  " + str(st1) + " " + compstr + " " + str(st2), flush=True)
 
     def print_report(self, y_pred):
-        self.log.info("\n == Typical FALSE negatives ==\n")
+        print("\n == Typical FALSE negatives ==\n", flush=True)
         t = np.where(np.logical_and(self.y_test != y_pred, y_pred == 0))
         self.print_typical(t[0], "!=")
 
-        self.log.info("\n == Typical FALSE positives ==\n")
+        print("\n == Typical FALSE positives ==\n", flush=True)
         t = np.where(np.logical_and(self.y_test != y_pred, y_pred == 1))
         self.print_typical(t[0], "==")
 
-        self.log.info("\n == Typical TRUE negatives ==\n")
+        print("\n == Typical TRUE negatives ==\n", flush=True)
         t = np.where(np.logical_and(self.y_test == y_pred, y_pred == 0))
         self.print_typical(t[0], "!=")
 
-        self.log.info("\n == Typical TRUE positives ==\n")
+        print("\n == Typical TRUE positives ==\n", flush=True)
         t = np.where(np.logical_and(self.y_test == y_pred, y_pred == 1))
         self.print_typical(t[0], "==")
 
-        self.log.info("\n == Confusion matrix ==\n")
+        print("\n == Confusion matrix ==\n", flush=True)
         print_confusion_matrix(self.y_test, y_pred)
 
         conf_matrix = confusion_matrix(self.y_test, y_pred)

@@ -235,6 +235,9 @@ def main():
             fbargs_model = tmp["fbargs"]
     elif args.train:
         logging.info("Building model from '%s'", ", ".join(args.train))
+        # this also builds test data from the part of the training data
+        # that is not used for training - if explicit test data is given,
+        # the test data is overwritten below
         model, ngram_model, fbargs, test_data, X_test, y_test, test_idx = mb.build(
             trainfiles=args.train, p=args.p,
             modelargs=modelargs, fbargs={
@@ -270,9 +273,7 @@ def main():
         fbargs["ngram_idx"] = ngram_model  # re-use the model ngrams
         fbargs["topk"] = len(ngram_model[2])  # re-use the top k
 
-        test_data = mb.build_from_file(
-            args.test,
-            fbargs=fbargs)
+        test_data = mb.build_from_file(args.test, fbargs=fbargs)
         tm = test_data.get_matrix()
         y_test = tm[:, -1].toarray().ravel()
         X_test = tm[:, :-1]

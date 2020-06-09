@@ -103,6 +103,14 @@ statsimi evaluate --model <model_file> --test <osm_data>
 
 where `<model_file>` is a pre-trained model and `<osm_data>` is a OSM file (the ground truth data). `statsimi` will output precision, recall, F1 score, a confusion matrix and typical true positives, true negatives, false positives and false negatives.
 
+You can also directly evaluate a method without building a model first:
+
+```
+statsimi evaluate --train <osm_data> --method=rf -p=0.2
+```
+
+will train on 20% of ``<osm_data>`` and test the model against the remaining 80%.
+
 ## Fix OSM data
 
 To fix OSM data, use
