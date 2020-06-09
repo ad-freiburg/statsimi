@@ -50,9 +50,6 @@ Write a fix file `germany.fix` for `germany-latest.osm` based on the previously 
 statsimi fix --model classify.mod --fix_out germany.fix --test germany-latest.osm
 ```
 
-
-``
-
 # General Usage
 
 `statsimi` can be used to train and output a reusable classification model, to start a classification HTTP server or to evaluate methods against some dataset.
