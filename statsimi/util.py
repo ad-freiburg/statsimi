@@ -14,6 +14,8 @@ import cutil
 import numpy as np
 from sklearn.metrics import confusion_matrix
 
+bts_cache = {}
+
 
 def hav(lon1, lat1, lon2, lat2):
     '''
@@ -342,6 +344,8 @@ def bts_simi(a, b):
     1.0
     >>> bts_simi("Hallo", "Test")
     0.0
+    >>> bts_simi("Test", "Hallo")
+    0.0
     >>> bts_simi("Test", "Test")
     1.0
     >>> bts_simi("Milner Road / Wandlee Road", "Wandlee Road")
@@ -379,11 +383,18 @@ def bts_simi(a, b):
     if a == b:
         return 1.0
 
+    cached = bts_cache.get(a, {}).get(b, None)
+
+    if cached is not None:
+        return cached
+
     seta = set(re.split(r"[\s]+", a))
     setb = set(re.split(r"[\s]+", b))
 
     if len(seta) == len(setb) == 1:
-        return 1 - ed(a, b) / max(len(a), len(b))
+        bts = 1 - ed(a, b) / max(len(a), len(b))
+        bts_cache.setdefault(a, {})[b] = bts
+        bts_cache.setdefault(b, {})[a] = bts
 
     if len(seta) > len(setb):
         seta, setb = setb, seta
@@ -394,14 +405,21 @@ def bts_simi(a, b):
     best = 1 - ed(a, b) / max(len(a), len(b))
 
     if best == 0.0:
+        bts_cache.setdefault(a, {})[b] = 0.0
+        bts_cache.setdefault(b, {})[a] = 0.0
         return 0.0
 
     best = bts_inner(seta, b, best)
 
     if best == 1:
+        bts_cache.setdefault(a, {})[b] = 1.0
+        bts_cache.setdefault(b, {})[a] = 1.0
         return 1.0
 
     best = bts_inner(setb, a, best)
+
+    bts_cache.setdefault(a, {})[b] = best
+    bts_cache.setdefault(b, {})[a] = best
 
     return best
 
