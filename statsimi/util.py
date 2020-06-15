@@ -300,12 +300,20 @@ def jaccard(a, b):
     0.2
     >>> jaccard("newton high street", "newton main street")
     0.5
+    >>> jaccard("", "")
+    1.0
+    >>> jaccard("a", "")
+    0.0
+    >>> jaccard("", "a")
+    0.0
     '''
 
     seta = set(re.split(r"[^\w]+", a))
     setb = set(re.split(r"[^\w]+", b))
     seta = set(filter(lambda x: len(x) > 0, seta))
     setb = set(filter(lambda x: len(x) > 0, setb))
+    if len(seta) == 0 and len(setb) == 0:
+        return 1.0
     return jaccard_set(seta, setb)
 
 
@@ -324,10 +332,9 @@ def bts_inner(seta, b, best):
             i += 1
 
             for perm in itertools.permutations(subset):
-                combination = " ".join(perm)
+                comb = " ".join(perm)
 
-                d = 1 - (cutil.ed(combination, b) /
-                         max(len(combination), len(b)))
+                d = 1 - (cutil.ed(comb, b) / max(len(comb), len(b)))
                 if d == 1:
                     return 1.0
 

@@ -448,6 +448,9 @@ class FeatureBuilder(object):
         self.log.info("Average number of station identifiers per group is %.2f"
                       % (group_nums_aggr / group_num))
 
+        # print histogram of distance between similar stations
+        # self.print_eq_dist_histo()
+
         self.matrix = csr_matrix(
             (data.get_mmap(), ind.get_mmap(), iptr.get_mmap()),
             shape=(len(iptr) - 1, self.num_feats + 1 + len(self.top_ngrams)),
