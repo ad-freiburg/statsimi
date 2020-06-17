@@ -25,7 +25,7 @@ class Normalizer(object):
         self.log = logging.getLogger('normzer')
         self.chain = []
 
-        self.log.info("Reading normalization rules from %s" % rulesfile)
+        self.log.info("Reading label normalization rules from %s" % rulesfile)
         with open(rulesfile, 'r', encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
@@ -42,7 +42,7 @@ class Normalizer(object):
         '''
         Normalize all names and all stations in groups and stats
 
-        >>> from osm.osm_parser import OsmParser
+        >>> from statsimi.osm.osm_parser import OsmParser
         >>> p = OsmParser()
         >>> p.parse("testdata/test.osm")
         >>> n = Normalizer("testdata/test.rules")
@@ -68,6 +68,8 @@ class Normalizer(object):
         >>> n = Normalizer("testdata/test.rules")
         >>> n.normalize_string("Freiburg,    Hbf")
         'freiburg hauptbahnhof'
+        >>> n.normalize_string("Freiburg,    Hbf   ")
+        'freiburg hauptbahnhof'
         >>> n.normalize_string("Freiburg,    Hbf Gleis 5")
         'freiburg hauptbahnhof'
         >>> n.normalize_string("Freibürg; Teststr.+Testav.  ")
@@ -75,6 +77,8 @@ class Normalizer(object):
         >>> n.normalize_string("Freibürg; Test str.+Testav.  ")
         'freibuerg test street and testavenue'
         '''
+        orig = a
         for rule in self.chain:
             a = rule[0].sub(rule[1], a.lower())
+
         return a

@@ -273,9 +273,6 @@ class ModelBuilder(object):
                 self.parse_pairs(filepath, stations, pairs, simi, bounds)
                 t = "pfile"
 
-        if self.normzer:
-            self.normzer.normalize(groups, stations)
-
         if t == "osm":
             bounds = osmp.bounds
 
@@ -285,6 +282,11 @@ class ModelBuilder(object):
             groups = osmp.groups
             stations = osmp.stations
             bounds = osmp.bounds
+
+            if self.normzer:
+                self.log.info("Applying label normalization...")
+                self.normzer.normalize(groups, stations)
+
             f.build_from_stat_grp(osmp.stations, osmp.groups)
         else:
             f.build_from_pairs(stations, pairs, simi)
