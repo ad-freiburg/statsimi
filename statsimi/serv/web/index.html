@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>station similarity classification | API visualization</title>
+
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="shortcut icon" type="image/x-icon" href="docs/images/favicon.ico" />
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js" integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og==" crossorigin=""></script>
+
+    <style>
+        body {
+            padding: 0;
+            margin: 0;
+            font-family: Verdana, Geneva, sans-serif;
+        }
+        html, body {
+            height: 100%;
+            width: 100%;
+        }
+        #nav {
+            height:2em;
+            position: absolute;
+            width: 100%;
+            top: 1px;
+            left:0px;
+            z-index: 999;
+        }
+
+        #msg {
+            font-weight: bold;
+            width: 30%;
+            min-width: 10em;
+            margin: auto;
+            text-align: center;
+            border-radius: 1em;
+            margin-top: 15px;
+            line-height: 2;
+            opacity: 0;
+            -webkit-transform: scale(1);
+            -ms-transform: scale(1);
+            transform: scale(1);
+            transition:all 0.3s ease;
+            border: solid #999 1px;
+        }
+
+        body.simi #msg,
+        body.simi {
+            background-color: #9cff9c;
+        }
+
+        body.simi #msg,
+        body.notsimi #msg{
+
+            -webkit-transform: scale(1.1);
+            -ms-transform: scale(1.1);
+            transform: scale(1.1);
+            opacity: 1;
+        }
+
+        body.notsimi #msg,
+        body.notsimi {
+            background-color: #d78e8e;
+        }
+
+        .leaflet-popup input {
+            margin-right: 5px;
+            border: none;
+            border-bottom: solid black 2px;
+            padding: 4px;
+            font-weight: bold;
+            opacity: 0.75;
+            margin-bottom: 10px;
+            min-width: 18em;
+        }
+
+        .leaflet-popup input:focus {
+            opacity: 1;
+        }
+
+        .leaflet-popup {
+            cursor: grab;
+        }
+
+        .leaflet-dragging .leaflet-popup {
+            cursor: grabbing;
+        }
+
+        textarea:focus, input:focus{
+            outline: none;
+        }
+
+        .leaflet-popup span.pos {
+            display: block;
+            font-weight: bold;
+        }
+
+        .leaflet-popup span.pos::before {
+            content: "@ ";
+        }
+
+        .leaflet-popup .close {
+            position: absolute;
+            display: block;
+            top: 5px;
+            right: 10px;
+            font-size: 20px;
+            color: #666;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .leaflet-popup .close:hover {
+            color: #000;
+        }
+
+        .leaflet-popup .close::before {
+            content: '×';
+        }
+
+        .leaflet-container a.leaflet-popup-close-button {
+            top: 20px;
+        }
+
+        .leaflet-popup.pop2 .leaflet-popup-content-wrapper {
+            position: absolute;
+            left: -50px;
+            bottom: -1px;
+        }
+
+        .leaflet-popup.pop1 .leaflet-popup-content-wrapper {
+            position: absolute;
+            top: 19px;
+            left: -50px;
+        }
+
+        .leaflet-popup.pop1 .leaflet-popup-tip-container {
+            -moz-transform: rotate(180deg);
+            -ms-transform: rotate(180deg);
+            transform: rotate(180deg);
+        }
+
+        .ico {
+            display: block;
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 24px;
+            height: 24px;
+            font-size: 20px;
+            font-weight: bold;
+            border: solid #CCC 1px;
+            border-radius: 12px;
+            text-align: center;
+            line-height: 24px;
+            background: #CCC;
+            color: white;
+        }
+
+        .leaflet-popup.pop1 .ico::before {
+            content: 'A';
+        }
+
+        .leaflet-popup.pop2 .ico::before {
+            content: 'B';
+        }
+    </style>
+</head>
+<body>
+
+<div id="map" style="opacity:0.97;width:100%;height: 100%;"></div>
+<div id="nav"><div id="msg"></div></div>
+<script src="script.js">
+</script>
+</body>
+</html>

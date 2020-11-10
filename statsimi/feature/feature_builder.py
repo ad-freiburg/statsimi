@@ -12,8 +12,11 @@ import logging
 from statistics import mean
 from statistics import median
 from numpy import argsort
+from numpy import ones
+from numpy import std
 import random
 from scipy.sparse import csr_matrix
+from scipy.stats import anderson
 from numpy import uint8
 from statsimi.feature.station_idx import StationIdx
 from statsimi.util import hav
@@ -63,6 +66,8 @@ class FeatureBuilder(object):
 
         self.log = logging.getLogger('featbld')
 
+        self.write_distr = True
+
         if force_orphans:
             self.log.info("(forcing pairs for station orphans)")
 
@@ -78,7 +83,6 @@ class FeatureBuilder(object):
             self._pairsfile = open(pairsfile, 'w')
 
         self.dists = []
-        self.dists_comp = []
 
         # a high number of pos pairs may lead to local overfitting
         self.num_pos_pairs = num_pos_pairs
@@ -158,39 +162,6 @@ class FeatureBuilder(object):
     @property
     def groups(self):
         return self._grps
-
-    def print_eq_dist_histo(self):
-        if len(self.dists) == 0:
-            return
-        w = 10
-        scale = 0.35
-        plt.rcParams["figure.figsize"] = [16 * scale, 6 * scale]
-        plt.hist(self.dists, rwidth=0.5, edgecolor='black', linewidth=0.7,
-                 bins=range(min(self.dists), max(self.dists), w), align='mid')
-
-        from matplotlib import ticker
-        formatter = ticker.ScalarFormatter(useMathText=True)
-        formatter.set_scientific(True)
-        formatter.set_powerlimits((-1, 1))
-
-        ax = plt.subplot(111)
-        # plt.xticks(range(min(self.dists), max(self.dists), w))
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
-        ax.set_xlim(-2, None)
-
-        ax.yaxis.set_major_formatter(formatter)
-
-        ax.get_xaxis().tick_bottom()
-        ax.get_yaxis().tick_left()
-
-        ax.set_xlabel('Distance in meters')
-        ax.set_ylabel('Number of similar pairs')
-
-        plt.savefig(os.path.join('dist_histo.pgf'),
-                    bbox_inches='tight', pad_inches=0)
-        plt.savefig(os.path.join('dist_histo.pdf'),
-                    bbox_inches='tight', pad_inches=0)
 
     def print_top_k(self):
         print("== TOP " + str(len(self.get_top_ngrams())) + " n-Grams ==\n")
@@ -375,7 +346,7 @@ class FeatureBuilder(object):
         matched = [set() for i in range(len(self._stats))]
 
         for stat in self._stats:
-            if stat.lon == None:
+            if stat.lon is None:
                 sidx.add_stat_group_poly(stat.gid, stat.poly)
             else:
                 sidx.add_stat_group(stat.gid, stat.lon, stat.lat)
@@ -397,11 +368,9 @@ class FeatureBuilder(object):
                     st2 = self._stats[sid2]
                     if len(st1.name) == 0 or len(st2.name) == 0:
                         continue
-                    if sid1 != sid2:
+                    if sid1 != sid2 and st1.osmnid != st2.osmnid:
                         d = self.dist(st1, st2)
-                        if d <= 250:
-                            self.dists.append(d)
-                        self.dists_comp.append(d)
+                        self.dists.append(d)
                     self.write_row(sid1, sid2, st1, st2, True, data, ind, iptr)
 
                 if not group1.osm_rel_id and not self.force_orphans:
@@ -412,7 +381,7 @@ class FeatureBuilder(object):
 
                 stations_in_group += 1
 
-                if st1.lon == None:
+                if st1.lon is None:
                     loc = sidx.get_neighbors_poly(st1.poly, self.cutoff)
                 else:
                     loc = sidx.get_neighbors(st1.lon, st1.lat, self.cutoff)
@@ -426,10 +395,12 @@ class FeatureBuilder(object):
                     # near the station to give the model the chance to learn
                     # obvious mistakes
 
-                    if st1.lon == None:
-                        sp = sidx.get_neighbors_poly(st1.poly, self.cutoff * 10)
+                    if st1.lon is None:
+                        sp = sidx.get_neighbors_poly(
+                            st1.poly, self.cutoff * 10)
                     else:
-                        sp = sidx.get_neighbors(st1.lon, st1.lat, self.cutoff * 10)
+                        sp = sidx.get_neighbors(
+                            st1.lon, st1.lat, self.cutoff * 10)
 
                     sp = random.sample(sp, k=min(len(sp), n))
 
@@ -440,16 +411,13 @@ class FeatureBuilder(object):
                 group_num += 1
 
         self.log.info("Average distance between matching pairs is %.2f"
-                      % mean(self.dists_comp))
+                      % mean(self.dists))
 
         self.log.info("Median distance between matching pairs is %.2f"
                       % median(self.dists))
 
         self.log.info("Average number of station identifiers per group is %.2f"
                       % (group_nums_aggr / group_num))
-
-        # print histogram of distance between similar stations
-        # self.print_eq_dist_histo()
 
         self.matrix = csr_matrix(
             (data.get_mmap(), ind.get_mmap(), iptr.get_mmap()),
@@ -464,8 +432,13 @@ class FeatureBuilder(object):
             self.log.info("@ pair #%d" % (len(iptr) - 1))
 
         if self.lev_simi_idx is not None:
-            lev_simi = int((1.0 - (ed(st1.name, st2.name) / max(
-                len(st1.name), len(st2.name)))) * 255)
+            lev_simi = 1.0 - (ed(st1.name, st2.name) / max(
+                len(st1.name), len(st2.name)))
+
+            if self.lev_simi_file and sid1 != sid2:
+                self.lev_simi_file.write("%f\r\n" % (lev_simi))
+
+            lev_simi = int(lev_simi) * 255
             lev_simi = self.oflow(lev_simi, st1, st2, 255, "editdist")
 
             if lev_simi > 0:
@@ -473,7 +446,12 @@ class FeatureBuilder(object):
                 data.append(lev_simi)
 
         if self.geodist_idx is not None:
-            geodist = self.dist(st1, st2) // 4
+            geodist = self.dist(st1, st2)
+
+            if self.geodist_file and sid1 != sid2 and st1.osmnid != st2.osmnid:
+                self.geodist_file.write("%f\r\n" % (geodist))
+
+            geodist = geodist // 4
             geodist = self.oflow(geodist, st1, st2, 255, "meterdist")
 
             if geodist > 0:
@@ -521,7 +499,12 @@ class FeatureBuilder(object):
                 data.append(jaccard_simi)
 
         if self.bts_simi_idx is not None:
-            b = int(bts_simi(st2.name, st1.name) * 255)
+            b = bts_simi(st2.name, st1.name)
+
+            if self.bts_file and sid1 != sid2:
+                self.bts_file.write("%f\r\n" % (b))
+
+            b = int(b * 255)
             bts_simi_val = self.oflow(b, st1, st2, 255, "bts")
 
             if bts_simi_val > 0:
@@ -624,8 +607,9 @@ class FeatureBuilder(object):
                 if st2.spice_id is not None:
                     wsid2 = st2.spice_id
 
-                if st1.lat == None:
-                    self.log.warn("TODO: Cannot write polygons to station file")
+                if st1.lat is None:
+                    self.log.warn(
+                        "TODO: Cannot write polygons to station file")
                 else:
                     d = '\t'.join([str(wsid1), st1.name, str(st1.lat),
                                    str(st1.lon), str(wsid2), st2.name,
@@ -644,14 +628,14 @@ class FeatureBuilder(object):
         return self.matrix
 
     def dist(self, s1, s2):
-        if s1.lat != None and s2.lat != None:
+        if s1.lat is not None and s2.lat is not None:
             if self.cutoff < 500000:
                 mdist = int(1000 * hav_approx(s1.lon, s1.lat, s2.lon, s2.lat))
             else:
                 mdist = int(1000 * hav(s1.lon, s1.lat, s2.lon, s2.lat))
-        elif s1.lat != None:
+        elif s1.lat is not None:
             mdist = int(1000 * hav_approx_poly_stat(s2.poly, s1.lon, s1.lat))
-        elif s2.lat != None:
+        elif s2.lat is not None:
             mdist = int(1000 * hav_approx_poly_stat(s1.poly, s2.lon, s2.lat))
         else:
             mdist = int(1000 * hav_approx_poly_poly(s1.poly, s2.poly))
@@ -701,7 +685,7 @@ class FeatureBuilder(object):
         pairs = [None] * n
         numtiles = 256
 
-        if st1.lon != None:
+        if st1.lon is not None:
             lon1 = st1.lon
             lat1 = st1.lat
         else:
@@ -709,7 +693,7 @@ class FeatureBuilder(object):
             lon1 = c[0]
             lat1 = c[1]
 
-        if st2.lon != None:
+        if st2.lon is not None:
             lon2 = st2.lon
             lat2 = st2.lat
         else:
@@ -814,57 +798,79 @@ class FeatureBuilder(object):
             self.lev_simi_idx = self.num_feats
             self.num_feats = self.num_feats + 1
             self.feature_idx['lev_simi'] = self.lev_simi_idx
+            if self.write_distr:
+                self.lev_simi_file = open("lev_simi.distr", 'w')
 
         if 'geodist' in self.features:
             self.geodist_idx = self.num_feats
             self.num_feats = self.num_feats + 1
             self.feature_idx['geodist'] = self.geodist_idx
+            if self.write_distr:
+                self.geodist_file = open("geodist.distr", 'w')
 
         if 'ped_simi_fw' in self.features:
             self.ped_simi_fw_idx = self.num_feats
             self.num_feats = self.num_feats + 1
             self.feature_idx['ped_simi_fw'] = self.ped_simi_fw_idx
+            if self.write_distr:
+                self.ped_simi_fw_file = open("ped_simi_fw.distr", 'w')
 
         if 'ped_simi_bw' in self.features:
             self.ped_simi_bw_idx = self.num_feats
             self.num_feats = self.num_feats + 1
             self.feature_idx['ped_simi_bw'] = self.ped_simi_bw_idx
+            if self.write_distr:
+                self.ped_simi_bw_file = open("ped_simi_bw.distr", 'w')
 
         if 'sed_simi_fw' in self.features:
             self.sed_simi_fw_idx = self.num_feats
             self.num_feats = self.num_feats + 1
             self.feature_idx['sed_simi_fw'] = self.sed_simi_fw_idx
+            if self.write_distr:
+                self.sed_simi_fw_file = open("sed_simi_fw.distr", 'w')
 
         if 'sed_simi_bw' in self.features:
             self.sed_simi_bw_idx = self.num_feats
             self.num_feats = self.num_feats + 1
             self.feature_idx['sed_simi_bw'] = self.sed_simi_bw_idx
+            if self.write_distr:
+                self.sed_simi_bw_file = open("sed_simi_bw.distr", 'w')
 
         if 'jaccard_simi' in self.features:
             self.jaccard_simi_idx = self.num_feats
             self.num_feats = self.num_feats + 1
             self.feature_idx['jaccard_simi'] = self.jaccard_simi_idx
+            if self.write_distr:
+                self.jaccard_simi_file = open("jaccard_simi.distr", 'w')
 
         if 'missing_ngram_count' in self.features:
             self.missing_ngram_count_idx = self.num_feats
             self.num_feats = self.num_feats + 1
             self.feature_idx[
                 'missing_ngram_count'] = self.missing_ngram_count_idx
+            if self.write_distr:
+                self.missing_ngram_count_file = open("missing_ngram_count.distr", 'w')
 
         if 'bts_simi' in self.features:
             self.bts_simi_idx = self.num_feats
             self.num_feats = self.num_feats + 1
             self.feature_idx['bts_simi'] = self.bts_simi_idx
+            if self.write_distr:
+                self.bts_file = open("bts.distr", 'w')
 
         if 'jaro_simi' in self.features:
             self.jaro_simi_idx = self.num_feats
             self.num_feats = self.num_feats + 1
             self.feature_idx['jaro_simi'] = self.jaro_simi_idx
+            if self.write_distr:
+                self.jaro_simi_file = open("jaro_simi.distr", 'w')
 
         if 'jaro_winkler_simi' in self.features:
             self.jaro_winkler_simi_idx = self.num_feats
             self.num_feats = self.num_feats + 1
             self.feature_idx['jaro_winkler_simi'] = self.jaro_winkler_simi_idx
+            if self.write_distr:
+                self.jaro_winkler_simi_file = open("jaro_winkler_simi.distr", 'w')
 
         # number of features we use besides the ngram index
         self.num_feats = self.num_feats + 2 * self.num_pos_pairs
