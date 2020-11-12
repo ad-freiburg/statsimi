@@ -272,7 +272,7 @@ class FeatureBuilder(object):
         Build all n-grams
         >>> from statsimi.osm.osm_parser import OsmParser
         >>> p = OsmParser()
-        >>> p.parse("testdata/test.osm")
+        >>> p.parse_xml("testdata/test.osm")
         >>> fb = FeatureBuilder(bbox=p.bounds)
         >>> fb.build_from_stat_grp(p.stations, p.groups)
         >>> fb.get_top_ngrams()
@@ -333,7 +333,7 @@ class FeatureBuilder(object):
         Build the feature matrix
         >>> from statsimi.osm.osm_parser import OsmParser
         >>> p = OsmParser()
-        >>> p.parse("testdata/test.osm")
+        >>> p.parse_xml("testdata/test.osm")
         >>> fb = FeatureBuilder(bbox=p.bounds)
         >>> fb.build_from_stat_grp(p.stations, p.groups)
         >>> fb.get_matrix().shape
@@ -359,8 +359,7 @@ class FeatureBuilder(object):
         group_num = 0
 
         for gid1, group1 in enumerate(self._grps):
-            # this number excludes spice stations
-            stations_in_group = 0
+            stations_in_group = 0  # this number excludes spice stations
             for id1, sid1 in enumerate(group1.stats):
                 st1 = self._stats[sid1]
                 # self matches, we also always write them for orphan groups

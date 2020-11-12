@@ -40,8 +40,7 @@ Build a classification model `classify.mod` for Germany (uses a random 20% of th
 
 ```
 wget https://download.geofabrik.de/europe/germany-latest.osm.bz2
-bunzip2 germany-latest.osm.bz2
-statsimi model --model_out classify.mod --train germany-latest.osm
+statsimi model --model_out classify.mod --train germany-latest.osm.bz2
 ```
 
 Write a fix file `germany.fix` for `germany-latest.osm` based on the previously build model:
@@ -59,6 +58,7 @@ The following basic commands are supported:
 * `model` (write a classification model for the given input data to a file)
 * `evaluate` (test the given model or the given approach against a ground truth)
 * `fix`	(write a file with fix suggestions and error highlights for the input OSM data)
+* `pairs` (write just the station pairs file from the input data)
 * `http` (fire up a classification server for the given model and/or input data)
 
 
@@ -74,9 +74,15 @@ Using a previously trained model, a classification HTTP server can be started li
 statsimi http --model <model_file> --http_port <port>
 ```
 
-A typical request then looks like this:
+A GUI for playing around with the model will then be available at `http://localhost:<port>`.
+
+[![Classification server GUI.](gui_res.png?raw=true)](gui.png?raw=true)
+
+*Classification server GUI*
+
+The API backend is at `/api`. A typical request then looks like this:
 ```
-http://localhost:8282/?name1=Bertoldsbrunnen&lat1=47.995662&lon1=7.846041&name2=Freiburg,%20Bertoldsbrunnen&lat2=47.995321&lon2=7.846341
+http://localhost:<port>/api?name1=Bertoldsbrunnen&lat1=47.995662&lon1=7.846041&name2=Freiburg,%20Bertoldsbrunnen&lat2=47.995321&lon2=7.846341
 ```
 
 The answer will be

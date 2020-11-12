@@ -44,7 +44,7 @@ class Normalizer(object):
 
         >>> from statsimi.osm.osm_parser import OsmParser
         >>> p = OsmParser()
-        >>> p.parse("testdata/test.osm")
+        >>> p.parse_xml("testdata/test.osm")
         >>> n = Normalizer("testdata/test.rules")
         >>> n.normalize(p.groups, p.stations)
         >>> p.groups[0].names[0]

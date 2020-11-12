@@ -35,6 +35,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
 
 meth_feats = {
+    "null": [],
     "rf": ["missing_ngram_count", "geodist"],
     "geodist": ["geodist"],
     "editdist": ["lev_simi"],
@@ -134,9 +135,13 @@ class ModelBuilder(object):
                     EditDistClassifier(
                         editdist_threshold=1 -
                         EPSILON))
+            elif method == "null":
+                pass
             else:
                 self.log.error("Unknown method " + method)
                 exit(1)
+
+        model = None
 
         if len(models) > 1:
             if self.voting == 'soft':
@@ -145,7 +150,7 @@ class ModelBuilder(object):
             else:
                 model = HardVoteClassifier(
                     train_data.stations, train_data.pairs, models)
-        else:
+        elif len(models) > 0:
             model = models[0]
 
         tm = train_data.get_matrix()
@@ -159,7 +164,7 @@ class ModelBuilder(object):
         test_idx = None
         train_idx = None
 
-        if X.shape[0] > 0:
+        if model is not None and X.shape[0] > 0:
             if p == 1:
                 X_train = X
                 y_train = y
@@ -178,6 +183,8 @@ class ModelBuilder(object):
         return model, ngram_model, fbargs, test_data, X_test, y_test, test_idx
 
     def file_type(self, path):
+        if path[-3:] == 'bz2':
+            return "osm_bzip"
         with open(path, 'r', encoding='utf-8') as f:
             line = f.readline()
             if len(line.split("\t")) == 9:
@@ -264,7 +271,13 @@ class ModelBuilder(object):
                 if t == "pfile":
                     self.log.error("Cannot mix OSM and pairs input files")
                     exit(1)
-                osmp.parse(filepath, unique=self.unique_names, with_polygons=self.with_polygons)
+                osmp.parse_xml(filepath, unique=self.unique_names, with_polygons=self.with_polygons)
+                t = "osm"
+            if self.file_type(filepath) == "osm_bzip":
+                if t == "pfile":
+                    self.log.error("Cannot mix OSM and pairs input files")
+                    exit(1)
+                osmp.parse_bz2(filepath, unique=self.unique_names, with_polygons=self.with_polygons)
                 t = "osm"
             if self.file_type(filepath) == "pfile":
                 if t == "osm":

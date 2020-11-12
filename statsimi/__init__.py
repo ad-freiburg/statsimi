@@ -38,7 +38,7 @@ def main():
     )
 
     parser.add_argument('cmd', metavar='<cmd>', type=str, nargs=1,
-                        help='command, either model, evaluate, fix or http')
+            help='command, either: pairs, model, evaluate, fix or http')
 
     parser.add_argument(
         '--model', type=str, default=None,
@@ -52,27 +52,27 @@ def main():
 
     parser.add_argument(
         '--pairs_train_out', type=str, default=None,
-        help='Output training pairs to this file'
+        help='Output training station pairs as TSV to this file'
     )
 
     parser.add_argument(
         '--pairs_test_out', type=str, default=None,
-        help='Output testing pairs to this file'
+        help='Output testing station pairs as TSV to this file'
     )
 
     parser.add_argument(
         '--fix_out', type=str, default="fixer.res",
-        help='OSM fixer result file output path.'
+        help='Output path for OSM fixer result.'
     )
 
     parser.add_argument(
         '--train', type=str, nargs='+', default=[],
-        help='OSM XML or pairs file with training data.'
+        help='Input training data, as OSM XML or pairs file.'
     )
 
     parser.add_argument(
         '--test', type=str, nargs='+',
-        help='OSM XML or pairs file with test data'
+        help='Input test data, as OSM XML or pairs file.'
     )
 
     parser.add_argument(
@@ -194,9 +194,13 @@ def main():
     for k in fbtestargs:
         fbtestargs[k] = [eval(val) for val in fbtestargs[k].split(",")]
 
-    if args.cmd[0] not in ["http", "evaluate", "fix", "evaluate-par", "model"]:
-        logging.error("Invalid mode '%s', use either 'http', 'evaluate', 'evaluate-par' or 'fix'." % args.cmd[0])
+    if args.cmd[0] not in ["http", "evaluate", "fix", "evaluate-par", "model", "pairs"]:
+        logging.error("Invalid mode '%s', use either 'http', 'evaluate', 'evaluate-par', 'pairs' or 'fix'." % args.cmd[0])
         exit(1)
+
+    if args.cmd[0] == "pairs":
+        # special null method which doesn't build any features
+        args.method = "null";
 
     mb = ModelBuilder(args.method, args.norm_file, args.voting, args.unique, args.with_polygons)
 
@@ -226,6 +230,25 @@ def main():
 
         exit(0)
 
+    if args.cmd[0] == "pairs":
+        logging.info(" === Writing pairs file ===\n")
+
+        if args.train is None or args.pairs_train_out is None:
+            logging.error("Please give the input data as a parameter to --train, and the output file as a parameter to --pairs_train_out.")
+            exit(1)
+
+        model, ngram_model, fbargs, test_data, X_test, y_test, test_idx = mb.build(
+            trainfiles=args.train, p=args.p,
+            modelargs=modelargs, fbargs={
+                "spice": args.spice,
+                "cutoffdist": args.cutoffdist,
+                "topk": 0,
+                "pairsfile": args.pairs_train_out,
+                "clean_data": args.clean_data
+            })
+
+        exit(0)
+
     if args.model:
         logging.info("Reading trained model from " + args.model)
         with open(args.model, "rb") as f:
@@ -234,7 +257,7 @@ def main():
             ngram_model = tmp["ngram"]
             fbargs_model = tmp["fbargs"]
     elif args.train:
-        logging.info("Building model from '%s'", ", ".join(args.train))
+        logging.info("Training model from '%s'", ", ".join(args.train))
         # this also builds test data from the part of the training data
         # that is not used for training - if explicit test data is given,
         # the test data is overwritten below

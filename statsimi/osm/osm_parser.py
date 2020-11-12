@@ -8,10 +8,10 @@ Patrick Brosi <brosi@informatik.uni-freiburg.de>
 import xml.etree.ElementTree as ET
 import math
 import os
+import bz2
 from statsimi.feature.stat_ident import StatIdent
 from statsimi.feature.stat_group import StatGroup
 import logging
-
 
 RD_BUFFER = 1024 * 1000 * 1000
 
@@ -163,12 +163,21 @@ class OsmParser(object):
     def is_grp_exl(self, attr):
         return self.filter_match(attr, grp_rel_ex_filter)
 
-    def parse(self, path, unique=False, with_polygons=False):
+    def parse_bz2(self, path, unique=False, with_polygons=False):
         '''
-        Parse an OSM XML file.
+        Parse a bziped OSM XML path.
+        '''
+
+        with bz2.open(path, 'rt', encoding="utf-8") as f:
+            return self.parse(f, unique, with_polygons)
+
+
+    def parse_xml(self, path, unique=False, with_polygons=False):
+        '''
+        Parse a raw OSM XML path.
 
         >>> p = OsmParser()
-        >>> p.parse("testdata/test.osm")
+        >>> p.parse_xml("testdata/test.osm")
         >>> sorted([str(grp) for grp in p.groups])
         ... # doctest: +NORMALIZE_WHITESPACE
         ['Group (rel_id=3271923) with 18 stations',\
@@ -180,7 +189,7 @@ class OsmParser(object):
         2496897172, 2496897172, 2496897172, 2496897173, 2496897173, \
         2496897173, 4984926391]
         >>> p = OsmParser()
-        >>> p.parse("testdata/test.osm", unique=True)
+        >>> p.parse_xml("testdata/test.osm", unique=True)
         >>> sorted([str(grp) for grp in p.groups])
         ... # doctest: +NORMALIZE_WHITESPACE
         ['Group (rel_id=3271923) with 12 stations',\
@@ -191,7 +200,7 @@ class OsmParser(object):
         507039988, 507039988, 2496897172, 2496897172, 2496897173,\
         2496897173, 4984926391]
         >>> p = OsmParser()
-        >>> p.parse("testdata/test.osm", False, True)
+        >>> p.parse_xml("testdata/test.osm", False, True)
         >>> sorted([str(grp) for grp in p.groups])
         ... # doctest: +NORMALIZE_WHITESPACE
         ['Group (rel_id=3271923) with 18 stations',\
@@ -205,8 +214,17 @@ class OsmParser(object):
         2496897173, 4984926391]
         '''
 
+        with open(path, 'r', encoding="utf-8", buffering=RD_BUFFER) as f:
+            return self.parse(f, unique, with_polygons)
+
+    def parse(self, osm_file, unique=False, with_polygons=False):
+        '''
+        Parse an OSM XML file.
+        '''
+
         self.log.info("First pass, parsing relations...")
-        nd_end, way_end = self.parse_relations(path, unique);
+
+        self.parse_relations(osm_file, unique);
 
         for gid, g in enumerate(self.groups):
             if g.osm_rel_id in self.rel_meta_group_idx:
@@ -214,10 +232,10 @@ class OsmParser(object):
 
         self.log.info("Second pass, parsing ways...")
         if with_polygons:
-            self.parse_ways(path, way_end, unique);
+            self.parse_ways(osm_file, unique);
 
         self.log.info("Third pass, parsing nodes...")
-        self.parse_nodes(path, nd_end, unique);
+        self.parse_nodes(osm_file, unique);
 
         self.log.info("Building station polygons")
         self.build_station_polys(unique)
@@ -225,307 +243,272 @@ class OsmParser(object):
         self.log.info("Parsed %d stations, %d station polygons, %s groups, %s orphan stats."
                       % (self.num_osm_stats, self.num_osm_way_polys, self.num_osm_groups, self.num_osm_stat_orphans))
 
-    def parse_relations(self, path, unique=False):
+    def parse_relations(self, f, unique=False):
         '''
         Parse the relations in an OSM file
         '''
 
-        f_size = os.path.getsize(path)
-        nd_end = f_size
-        way_end = f_size
+        f.seek(0)
+        context = ET.iterparse(f, events=("start", "end"))
+        context = iter(context)
+        event, root = next(context)
 
-        perc_last = 0
+        i = 0
 
-        with open(path, 'r', encoding="utf-8", buffering=RD_BUFFER) as f:
-            context = ET.iterparse(f, events=("start", "end"))
-            context = iter(context)
-            event, root = next(context)
+        for event, c1 in context:
+            if event == "start":
+                continue
 
-            i = 0
+            i = i + 1
 
-            for event, c1 in context:
-                if event == "start":
-                    continue
-
-                i = i + 1
-
-                perc = int((f.tell() / f_size) * 100)
-                if perc - perc_last >= 10:
-                    perc_last = perc
-                    self.log.info("@ %d%%" % (perc))
-                if nd_end == f_size and c1.tag == "way":
-                    nd_end = f.tell()
-                if way_end == f_size and c1.tag == "relation":
-                    way_end = f.tell()
-
-                if c1.tag != "relation":
-                    if i % BUFFER == 0:
-                        root.clear()
-                    continue
-
-                is_st_area = 2  # 2 == undecided
-                is_meta_st_area = 2  # 2 == undecided
-                curGroup = StatGroup(osm_rel_id=int(c1.attrib["id"]))
-
-                for c2 in c1:
-                    if c2.tag != "tag":
-                        continue
-                    if is_st_area == 2 and self.is_grp(c2.attrib):
-                        is_st_area = 1
-                    if self.is_grp_exl(c2.attrib):
-                        is_st_area = 0
-
-                    if is_meta_st_area == 2 and self.is_meta_grp(c2.attrib):
-                        is_meta_st_area = 1
-
-                    # collect attrs for group
-                    if c2.attrib["k"] in st_name_attrs:
-                        for name in c2.attrib["v"].split(";"):
-                            name = " ".join(name.replace('\r', ' ').replace('\n', ' ').split())
-                            if len(name) == 0:
-                                continue
-                            if not unique or not curGroup.has_name(name):
-                                curGroup.add_name(name, c2.attrib["k"])
-
-                if not is_st_area == 1 and not is_meta_st_area == 1:
-                    if i % BUFFER == 0:
-                        root.clear()
-                    continue
-
-                if is_st_area == 1:
-                    # add new group
-                    self.groups.append(curGroup)
-
-                    self.num_osm_groups += 1
-
-                    for c2 in c1:
-                        if c2.tag != "member":
-                            continue
-                        if c2.attrib["type"] == "node":
-                            self.nd_group_idx[int(c2.attrib["ref"])] = len(
-                                self.groups) - 1
-                        if c2.attrib["type"] == "way":
-                            self.way_group_idx[int(c2.attrib["ref"])] = len(
-                                self.groups) - 1
-
-                if is_meta_st_area == 1:
-                    for c2 in c1:
-                        if c2.tag != "member":
-                            continue
-                        if c2.attrib["type"] != "relation":
-                            continue
-                        self.rel_meta_group_idx[int(
-                            c2.attrib["ref"])] = c1.attrib["id"]
-
+            if c1.tag != "relation":
                 if i % BUFFER == 0:
                     root.clear()
+                continue
 
-        return nd_end, way_end
+            is_st_area = 2  # 2 == undecided
+            is_meta_st_area = 2  # 2 == undecided
+            curGroup = StatGroup(osm_rel_id=int(c1.attrib["id"]))
 
-    def parse_nodes(self, path, nd_end, unique=False):
+            for c2 in c1:
+                if c2.tag != "tag":
+                    continue
+                if is_st_area == 2 and self.is_grp(c2.attrib):
+                    is_st_area = 1
+                if self.is_grp_exl(c2.attrib):
+                    is_st_area = 0
+
+                if is_meta_st_area == 2 and self.is_meta_grp(c2.attrib):
+                    is_meta_st_area = 1
+
+                # collect attrs for group
+                if c2.attrib["k"] in st_name_attrs:
+                    for name in c2.attrib["v"].split(";"):
+                        name = " ".join(name.replace('\r', ' ').replace('\n', ' ').split())
+                        if len(name) == 0:
+                            continue
+                        if not unique or not curGroup.has_name(name):
+                            curGroup.add_name(name, c2.attrib["k"])
+
+            if not is_st_area == 1 and not is_meta_st_area == 1:
+                if i % BUFFER == 0:
+                    root.clear()
+                continue
+
+            if is_st_area == 1:
+                # add new group
+                self.groups.append(curGroup)
+
+                self.num_osm_groups += 1
+
+                for c2 in c1:
+                    if c2.tag != "member":
+                        continue
+                    if c2.attrib["type"] == "node":
+                        self.nd_group_idx[int(c2.attrib["ref"])] = len(
+                            self.groups) - 1
+                    if c2.attrib["type"] == "way":
+                        self.way_group_idx[int(c2.attrib["ref"])] = len(
+                            self.groups) - 1
+
+            if is_meta_st_area == 1:
+                for c2 in c1:
+                    if c2.tag != "member":
+                        continue
+                    if c2.attrib["type"] != "relation":
+                        continue
+                    self.rel_meta_group_idx[int(
+                        c2.attrib["ref"])] = c1.attrib["id"]
+
+            if i % BUFFER == 0:
+                root.clear()
+
+    def parse_nodes(self, f, unique=False):
         '''
         Parse the nodes in an OSM file
         '''
 
-        f_size = os.path.getsize(path)
+        f.seek(0)
+        context = ET.iterparse(f, events=("start", "end"))
+        context = iter(context)
+        event, root = next(context)
 
-        perc_last = 0
+        i = 0
 
-        with open(path, 'r', encoding="utf-8", buffering=RD_BUFFER) as f:
-            context = ET.iterparse(f, events=("start", "end"))
-            context = iter(context)
-            event, root = next(context)
+        for event, c1 in context:
+            if event == "start":
+                continue
 
-            i = 0
+            i = i + 1
 
-            for event, c1 in context:
-                if event == "start":
-                    continue
+            if c1.tag == "way" or c1.tag == "relation":
+                break
 
-                i = i + 1
-
-                perc = int((f.tell() / nd_end) * 100)
-                if perc - perc_last >= 10:
-                    perc_last = perc
-                    self.log.info("@ %d%%" % (perc))
-
-                if c1.tag == "way" or c1.tag == "relation":
-                    break
-
-                if c1.tag != "node":
-                    if i % BUFFER == 0:
-                        root.clear()
-                    continue
-
-                nid = int(c1.attrib["id"])
-                lat = float(c1.attrib["lat"])
-                lon = float(c1.attrib["lon"])
-
-                if lat < self.ll[0]:
-                    self.ll[0] = lat
-                if lon < self.ll[1]:
-                    self.ll[1] = lon
-                if lat > self.ur[0]:
-                    self.ur[0] = lat
-                if lon > self.ur[1]:
-                    self.ur[1] = lon
-
-                if nid in self.way_kept_nds:
-                    self.way_nd_pos[nid] = (lon, lat)
-
-                is_station = False
-                for c2 in c1:
-                    if c2.tag != "tag":
-                        continue
-                    if self.is_st(c2.attrib):
-                        is_station = True
-
-                if not is_station:
-                    if i % BUFFER == 0:
-                        root.clear()
-                    continue
-
-                self.num_osm_stats += 1
-
-                if nid not in self.nd_group_idx:
-                    self.num_osm_stat_orphans += 1
-                    # this node has its own group, possible with multiple
-                    # entries because it has multiple names!
-
-                    # add new orphan group
-                    self.groups.append(StatGroup())
-
-                    self.nd_group_idx[nid] = len(self.groups) - 1
-
-                unique_st_names = set()
-                cur_st_names = []
-
-                orig_nd_name = ""
-
-                # collect unique station names
-                for c2 in c1:
-                    if c2.attrib["k"] in st_name_attrs:
-                        for name in c2.attrib["v"].split(";"):
-                            name = " ".join(name.replace('\r', ' ').replace('\n', ' ').split())
-                            if len(name) == 0:
-                                continue
-                            if unique and name in unique_st_names:
-                                continue
-
-                            unique_st_names.add(name)
-                            cur_st_names.append((name, c2.attrib["k"]))
-                    if c2.attrib["k"] == "name":
-                        orig_nd_name = c2.attrib["v"]
-
-                for name, attr in cur_st_names:
-                    self.stations.append(
-                        StatIdent(
-                            lat=lat,
-                            lon=lon,
-                            name=name,
-                            orig_nd_name=orig_nd_name,
-                            osmnid=nid,
-                            gid=self.nd_group_idx[nid],
-                            srctype=1,
-                            name_attr=attr))
-                    self.groups[self.nd_group_idx[nid]].add_station(
-                        len(self.stations) - 1)
-
-                for grp_name in self.groups[self.nd_group_idx[nid]].names:
-                    # we count each name of the group as a synonym for
-                    # the included stations and treat them as instances
-                    # of this node
-                    if unique:
-                        if grp_name[0] in unique_st_names:
-                            continue
-                        unique_st_names.add(grp_name[0])
-
-                    self.stations.append(
-                        StatIdent(
-                            lat=lat,
-                            lon=lon,
-                            name=grp_name[0],
-                            orig_nd_name=orig_nd_name,
-                            osmnid=nid,
-                            gid=self.nd_group_idx[nid],
-                            srctype=2,
-                            name_attr=grp_name[1]))
-                    self.groups[self.nd_group_idx[nid]].add_station(
-                        len(self.stations) - 1)
-
+            if c1.tag != "node":
                 if i % BUFFER == 0:
                     root.clear()
+                continue
 
-    def parse_ways(self, path, way_end, unique=False):
+            nid = int(c1.attrib["id"])
+            lat = float(c1.attrib["lat"])
+            lon = float(c1.attrib["lon"])
+
+            if lat < self.ll[0]:
+                self.ll[0] = lat
+            if lon < self.ll[1]:
+                self.ll[1] = lon
+            if lat > self.ur[0]:
+                self.ur[0] = lat
+            if lon > self.ur[1]:
+                self.ur[1] = lon
+
+            if nid in self.way_kept_nds:
+                self.way_nd_pos[nid] = (lon, lat)
+
+            is_station = False
+            for c2 in c1:
+                if c2.tag != "tag":
+                    continue
+                if self.is_st(c2.attrib):
+                    is_station = True
+
+            if not is_station:
+                if i % BUFFER == 0:
+                    root.clear()
+                continue
+
+            self.num_osm_stats += 1
+
+            if nid not in self.nd_group_idx:
+                self.num_osm_stat_orphans += 1
+                # this node has its own group, possible with multiple
+                # entries because it has multiple names!
+
+                # add new orphan group
+                self.groups.append(StatGroup())
+
+                self.nd_group_idx[nid] = len(self.groups) - 1
+
+            unique_st_names = set()
+            cur_st_names = []
+
+            orig_nd_name = ""
+
+            # collect unique station names
+            for c2 in c1:
+                if c2.attrib["k"] in st_name_attrs:
+                    for name in c2.attrib["v"].split(";"):
+                        name = " ".join(name.replace('\r', ' ').replace('\n', ' ').split())
+                        if len(name) == 0:
+                            continue
+                        if unique and name in unique_st_names:
+                            continue
+
+                        unique_st_names.add(name)
+                        cur_st_names.append((name, c2.attrib["k"]))
+                if c2.attrib["k"] == "name":
+                    orig_nd_name = c2.attrib["v"]
+
+            for name, attr in cur_st_names:
+                self.stations.append(
+                    StatIdent(
+                        lat=lat,
+                        lon=lon,
+                        name=name,
+                        orig_nd_name=orig_nd_name,
+                        osmnid=nid,
+                        gid=self.nd_group_idx[nid],
+                        srctype=1,
+                        name_attr=attr))
+                self.groups[self.nd_group_idx[nid]].add_station(
+                    len(self.stations) - 1)
+
+            for grp_name in self.groups[self.nd_group_idx[nid]].names:
+                # we count each name of the group as a synonym for
+                # the included stations and treat them as instances
+                # of this node
+                if unique:
+                    if grp_name[0] in unique_st_names:
+                        continue
+                    unique_st_names.add(grp_name[0])
+
+                self.stations.append(
+                    StatIdent(
+                        lat=lat,
+                        lon=lon,
+                        name=grp_name[0],
+                        orig_nd_name=orig_nd_name,
+                        osmnid=nid,
+                        gid=self.nd_group_idx[nid],
+                        srctype=2,
+                        name_attr=grp_name[1]))
+                self.groups[self.nd_group_idx[nid]].add_station(
+                    len(self.stations) - 1)
+
+            if i % BUFFER == 0:
+                root.clear()
+
+    def parse_ways(self, f, unique=False):
         '''
         Parse the ways in an OSM file
         '''
 
-        f_size = os.path.getsize(path)
+        f.seek(0)
+        context = ET.iterparse(f, events=("start", "end"))
+        context = iter(context)
+        event, root = next(context)
 
-        perc_last = 0
+        i = 0
 
-        with open(path, 'r', encoding="utf-8", buffering=RD_BUFFER) as f:
-            context = ET.iterparse(f, events=("start", "end"))
-            context = iter(context)
-            event, root = next(context)
+        for event, c1 in context:
+            if event == "start":
+                continue
 
-            i = 0
+            i = i + 1
 
-            for event, c1 in context:
-                if event == "start":
-                    continue
+            if c1.tag == "relation":
+                break
 
-                i = i + 1
-
-                perc = int((f.tell() / way_end) * 100)
-                if perc - perc_last >= 10:
-                    perc_last = perc
-                    self.log.info("@ %d%%" % (perc))
-
-                if c1.tag == "relation":
-                    break
-
-                if c1.tag != "way":
-                    if i % BUFFER == 0:
-                        root.clear()
-                    continue
-
-                wid = int(c1.attrib["id"])
-                self.way_nds[wid] = []
-
-                is_station = False
-                for c2 in c1:
-                    if c2.tag == "nd":
-                        nid = int(c2.attrib["ref"])
-                        self.way_kept_nds.add(nid)
-                        self.way_nds[wid].append(nid)
-                    if c2.tag != "tag":
-                        continue
-                    if self.is_st_poly(c2.attrib):
-                        is_station = True
-
-                if not is_station:
-                    if i % BUFFER == 0:
-                        root.clear()
-                    continue
-
-                self.num_osm_way_polys += 1
-
-                cur_st_names = []
-
-                # collect unique station names
-                for c2 in c1:
-                    if c2.tag != "tag":
-                        continue
-                    if c2.attrib["k"] in st_name_attrs:
-                        for name in c2.attrib["v"].split(";"):
-                            cur_st_names.append((name, c2.attrib["k"]))
-
-                self.way_names[wid] = cur_st_names
-
+            if c1.tag != "way":
                 if i % BUFFER == 0:
                     root.clear()
+                continue
+
+            wid = int(c1.attrib["id"])
+            self.way_nds[wid] = []
+
+            is_station = False
+            for c2 in c1:
+                if c2.tag == "nd":
+                    nid = int(c2.attrib["ref"])
+                    self.way_kept_nds.add(nid)
+                    self.way_nds[wid].append(nid)
+                if c2.tag != "tag":
+                    continue
+                if self.is_st_poly(c2.attrib):
+                    is_station = True
+
+            if not is_station:
+                if i % BUFFER == 0:
+                    root.clear()
+                continue
+
+            self.num_osm_way_polys += 1
+
+            cur_st_names = []
+
+            # collect unique station names
+            for c2 in c1:
+                if c2.tag != "tag":
+                    continue
+                if c2.attrib["k"] in st_name_attrs:
+                    for name in c2.attrib["v"].split(";"):
+                        cur_st_names.append((name, c2.attrib["k"]))
+
+            self.way_names[wid] = cur_st_names
+
+            if i % BUFFER == 0:
+                root.clear()
 
     def build_station_polys(self, unique):
         for wid, names in self.way_names.items():
