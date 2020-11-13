@@ -194,8 +194,8 @@ class ModelBuilder(object):
     def parse_pairs(self, path, stations, pairs, simi, bounds):
         stats = {}
 
-        ll = [math.inf, math.inf]
-        ur = [-math.inf, -math.inf]
+        ll = [float("inf"), float("inf")]
+        ur = [-float("inf"), -float("inf")]
 
         with open(path, 'r', encoding='utf-8') as f:
             for line in f:
