@@ -74,8 +74,8 @@ The pairs file is a tab separated file with the following fields: `station1_id`,
 Example rows:
 
 ```
-368 Freiburg, Bertoldsbrunnen   47.9947126  7.8500194   3903    Freiburg Bertoldsbrunnen    47.9951889  7.8501929   1
-368 Freiburg, Bertoldsbrunnen   47.9947126  7.8500194   296 Freiburg ZOB Fernbus    47.9957201  7.8403324   0
+368 Freiburg, Bertoldsbrunnen	47.9947126	7.8500194	3903	Freiburg Bertoldsbrunnen	47.9951889	7.8501929	1
+368	Freiburg, Bertoldsbrunnen	47.9947126	7.8500194	296	Freiburg ZOB Fernbus	47.9957201	7.8403324	0
 ```
 
 ## Train a model
