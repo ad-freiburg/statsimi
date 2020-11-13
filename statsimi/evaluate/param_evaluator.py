@@ -68,11 +68,11 @@ class ParamEvaluator(object):
     def run(self, run, mb, X_test, y_test, test_idx, train_data, test_data,
             modelargs, fbargs, precs, recs, f1s, p_neg, r_neg, f1_neg,
             p_pos, r_pos, f1_pos, conf_ms):
-        self.log.info("===")
+        self.log.info("======================================================")
         self.log.info(" Running #" + str(run + 1) + "/" + str(self.runs))
         self.log.info("    fbargs=" + repr(fbargs))
         self.log.info("    modelargs=" + repr(modelargs))
-        self.log.info("===")
+        self.log.info("")
 
         if test_data is None:
             model, ngram_model, _, _, X_test, y_test, test_idx = mb.build_model(train_data, self.p, modelargs)
@@ -278,3 +278,14 @@ class ParamEvaluator(object):
             plt.savefig(os.path.join(self.outputdir, 'result.pdf'),
                 bbox_inches='tight',
                 pad_inches=0)
+
+            plt.close()
+
+        # results summary as single line
+        print("%.2f\t%.2f\t%.2f\t%s\t%s" % (
+                          p_pos_avg[np.argmax(f1_pos_avg)],
+                          r_pos_avg[np.argmax(f1_pos_avg)],
+                          max(f1_pos_avg),
+                          modelargs_col[np.argmax(f1_pos_avg)],
+                          fbargs_col[np.argmax(f1_pos_avg)]))
+
