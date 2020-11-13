@@ -1,3 +1,6 @@
+[![Build
+Status](https://travis-ci.org/ad-freiburg/statsimi.svg?branch=master)](https://travis-ci.org/ad-freiburg/statsimi)
+
 # statsimi
 
 **Work in progress, without any warranty**
