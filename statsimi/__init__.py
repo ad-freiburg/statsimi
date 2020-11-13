@@ -122,7 +122,7 @@ def main():
 
     parser.add_argument(
         '--cutoffdist', type=int, default=1000,
-        help='Cutoff distance in meters'
+        help='Max distance in meters between stations from OSM input to be considered similar'
     )
 
     parser.add_argument(

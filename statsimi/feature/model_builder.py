@@ -234,13 +234,13 @@ class ModelBuilder(object):
                 if sid1 not in stats:
                     stats[sid1] = (
                         len(stations), StatIdent(
-                            lat1, lon1, sname1, gid=0))
+                            lat=lat1, lon=lon1, name=sname1, gid=0))
                     stations.append(stats[sid1][1])
 
                 if sid2 not in stats:
                     stats[sid2] = (
                         len(stations), StatIdent(
-                            lat2, lon2, sname2, gid=0))
+                            lat=lat2, lon=lon2, name=sname2, gid=0))
                     stations.append(stats[sid2][1])
 
                 pairs.append((stats[sid1][0], stats[sid2][0]))
@@ -302,6 +302,12 @@ class ModelBuilder(object):
 
             f.build_from_stat_grp(osmp.stations, osmp.groups)
         else:
+            if self.normzer:
+                self.log.info("Applying label normalization...")
+                self.normzer.normalize([], stations)
+
             f.build_from_pairs(stations, pairs, simi)
+
+        self.log.info("%d station pairs" % f.matrix.shape[0])
 
         return f

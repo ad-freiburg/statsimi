@@ -21,3 +21,7 @@ compile_commands.json
 *.lib
 geodata/
 bin/
+.eggs/
+venv/
+statsimi.egg-info/
+*.log

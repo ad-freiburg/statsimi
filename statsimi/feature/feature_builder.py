@@ -610,8 +610,8 @@ class FeatureBuilder(object):
                     self.log.warn(
                         "TODO: Cannot write polygons to station file")
                 else:
-                    d = '\t'.join([str(wsid1), st1.name, str(st1.lat),
-                                   str(st1.lon), str(wsid2), st2.name,
+                    d = '\t'.join([str(wsid1), st1.name.replace("\t", " "), str(st1.lat),
+                                   str(st1.lon), str(wsid2), st2.name.replace("\t", " "),
                                    str(st2.lat), str(st2.lon), str(int(match))])
                     self._pairsfile.write(d + '\n')
 
@@ -754,7 +754,6 @@ class FeatureBuilder(object):
                 # and keep it out of the ground truth
                 continue
 
-            inserted = False
             for sid2 in group2.stats:
                 if wiggle:
                     st2 = copy.copy(self._stats[sid2])
@@ -784,12 +783,8 @@ class FeatureBuilder(object):
                     # mapping mistake, but we don't use it as ground truth
                     continue
 
-                inserted = True
-
                 matched[sid1].add(sid2)
                 self.write_row(sid1, sid2, st1, st2, False, data, ind, iptr)
-
-            if inserted:
                 count += 1
 
     def prepare_features(self):

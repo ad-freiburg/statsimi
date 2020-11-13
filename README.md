@@ -61,6 +61,22 @@ The following basic commands are supported:
 * `pairs` (write just the station pairs file from the input data)
 * `http` (fire up a classification server for the given model and/or input data)
 
+## Build a station pairs file
+
+Instead of parsing the OSM data on each run, it is possible to generate the station pairs file once and use it instead of an OSM file:
+
+```
+statsimi pairs --test <input> --pairs_train_out <output>
+```
+
+The pairs file is a tab separated file with the following fields: `station1_id`, `station1_name`, `station1_lat`, `station1_lon`, `station2_id`, `station2_name`, `station2_lat`, `station2_lon`, `similar`.
+
+Example rows:
+
+```
+368 Freiburg, Bertoldsbrunnen   47.9947126  7.8500194   3903    Freiburg Bertoldsbrunnen    47.9951889  7.8501929   1
+368 Freiburg, Bertoldsbrunnen   47.9947126  7.8500194   296 Freiburg ZOB Fernbus    47.9957201  7.8403324   0
+```
 
 ## Train a model
 ```
