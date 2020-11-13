@@ -25,6 +25,7 @@ setup(
     ext_modules=[cutil],
     setup_requires=['wheel'],
     install_requires=install_requires,
+    include_package_data = True,
     entry_points={
         'console_scripts': [
             'statsimi = statsimi:main',
