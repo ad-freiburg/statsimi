@@ -14,8 +14,8 @@
 #define EPSILON 0.00001
 
 // https://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/Levenshtein_distance#C
-static int ed(const Py_UNICODE* s1, const Py_UNICODE* s2, int s1len,
-              int s2len) {
+static int ed(const Py_UNICODE* s1, const Py_UNICODE* s2, unsigned int s1len,
+              unsigned int s2len) {
   unsigned int x, y, lastdiag, olddiag;
   unsigned int column[s1len + 1];
 
@@ -36,8 +36,8 @@ static int ed(const Py_UNICODE* s1, const Py_UNICODE* s2, int s1len,
   return (column[s1len]);
 }
 
-static int ped(const Py_UNICODE* s1, const Py_UNICODE* s2, int s1len,
-               int s2len) {
+static int ped(const Py_UNICODE* s1, const Py_UNICODE* s2, unsigned int s1len,
+               unsigned int s2len) {
   unsigned int x, y;
   unsigned int matrix[s2len + 1][s1len + 1];
 
@@ -60,8 +60,8 @@ static int ped(const Py_UNICODE* s1, const Py_UNICODE* s2, int s1len,
   return min;
 }
 
-static int sed(const Py_UNICODE* s1, const Py_UNICODE* s2, int s1len,
-               int s2len) {
+static int sed(const Py_UNICODE* s1, const Py_UNICODE* s2, unsigned int s1len,
+               unsigned int s2len) {
   unsigned int x, y;
   unsigned int matrix[s2len + 1][s1len + 1];
 
@@ -84,8 +84,8 @@ static int sed(const Py_UNICODE* s1, const Py_UNICODE* s2, int s1len,
   return min;
 }
 
-static double jaro(const Py_UNICODE* s1, const Py_UNICODE* s2, int s1len,
-                   int s2len) {
+static double jaro(const Py_UNICODE* s1, const Py_UNICODE* s2, unsigned int s1len,
+                   unsigned int s2len) {
   if (s1len == 0) return s2len == 0 ? 1.0 : 0.0;
 
   // max distance between two chars to be considered matching
@@ -243,7 +243,7 @@ int poly_contains_point(double px, double py, PyObject* poly) {
   int8_t c = -1;
 
   PyObject* item;
-  for (size_t i = 1; i < n; i++) {
+  for (Py_ssize_t i = 1; i < n; i++) {
     item = PyList_GetItem(poly, i - 1);
     double ax = PyFloat_AsDouble(PyTuple_GetItem(item, 0));
     double ay = PyFloat_AsDouble(PyTuple_GetItem(item, 1));
@@ -278,7 +278,7 @@ double hav_approx_poly_stat(double lonp, double latp, PyObject* poly) {
   double best = 1 / 0.0;
 
   PyObject* item;
-  for (size_t i = 1; i < n; i++) {
+  for (Py_ssize_t i = 1; i < n; i++) {
     item = PyList_GetItem(poly, i - 1);
     double lon1 = PyFloat_AsDouble(PyTuple_GetItem(item, 0));
     double lat1 = PyFloat_AsDouble(PyTuple_GetItem(item, 1));
@@ -301,7 +301,7 @@ double hav_approx_poly_poly(PyObject* polyA, PyObject* polyB) {
   double best = 1 / 0.0;
 
   PyObject* item;
-  for (size_t i = 0; i < na; i++) {
+  for (Py_ssize_t i = 0; i < na; i++) {
     item = PyList_GetItem(polyA, i);
     double lon = PyFloat_AsDouble(PyTuple_GetItem(item, 0));
     double lat = PyFloat_AsDouble(PyTuple_GetItem(item, 1));
@@ -311,7 +311,7 @@ double hav_approx_poly_poly(PyObject* polyA, PyObject* polyB) {
     if (cur < best) best = cur;
   }
 
-  for (size_t i = 0; i < nb; i++) {
+  for (Py_ssize_t i = 0; i < nb; i++) {
     item = PyList_GetItem(polyB, i);
     double lon = PyFloat_AsDouble(PyTuple_GetItem(item, 0));
     double lat = PyFloat_AsDouble(PyTuple_GetItem(item, 1));
@@ -419,7 +419,7 @@ static PyObject* cutil_centroid(PyObject* self, PyObject* args) {
   PyObject* item;
   double x = 0;
   double y = 0;
-  for (size_t i = 0; i < n; i++) {
+  for (Py_ssize_t i = 0; i < n; i++) {
     item = PyList_GetItem(poly, i);
     x += PyFloat_AsDouble(PyTuple_GetItem(item, 0));
     y += PyFloat_AsDouble(PyTuple_GetItem(item, 1));
