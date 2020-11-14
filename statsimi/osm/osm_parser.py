@@ -135,8 +135,8 @@ class OsmParser(object):
         self.way_nd_pos = {}
         self.way_names = {}
 
-        self.ll = [math.inf, math.inf]
-        self.ur = [-math.inf, -math.inf]
+        self.ll = [float("inf"), float("inf")]
+        self.ur = [-float("inf"), -float("inf")]
 
     @property
     def bounds(self):
