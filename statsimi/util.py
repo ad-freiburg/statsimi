@@ -376,14 +376,11 @@ def bts_simi(a, b):
     >>> bts_simi("blubbb blib blabb blobo", "blibb blabbel bla blubb blobo")
     0.84
     >>> '%.2f' % bts_simi("Reiter Freiburg im Breisgau",
-    ... "Rei ter Frei burg im Brei sgau blabbbbbb")
-    '0.90'
-    >>> '%.2f' % bts_simi("Reiter Freiburg im Breisgau",
-    ... "Rei ter Frei burg im Brei sgau blab b b b bb")
-    '0.90'
-    >>> '%.2f' % bts_simi("Rei ter Frei im burgo Brei sgau blabbbbbbb",
-    ... "Rei ter Frei burg im Brei sgau blabbbbbb")
-    '0.95'
+    ... "Reiter Frei burg im Brei sgau")
+    '0.93'
+    >>> '%.2f' % bts_simi("Freiburg im Breisgau, Germany, Main Railway Station",
+    ... "Main Railway Station Freiburg im Breisgau, Germany")
+    '1.00'
     '''
 
     # shortcut
@@ -410,6 +407,10 @@ def bts_simi(a, b):
     # this is already our best known value - simply the edit
     # distance similarity between the strings
     best = 1 - ed(a, b) / max(len(a), len(b))
+
+    # fallback if the token set is too large
+    if len(seta) > 6 or len(setb) > 6:
+        return jaccard(a, b)
 
     if best == 0.0:
         bts_cache.setdefault(a, {})[b] = 0.0
