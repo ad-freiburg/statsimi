@@ -51,7 +51,6 @@ class FeatureBuilder(object):
         ngram=3,
         cutoffdist=1000,
         features=['lev_simi', 'geodist'],
-        pairsfile=None,
         clean_data=False
     ):
 
@@ -77,10 +76,6 @@ class FeatureBuilder(object):
         self.clean_data = clean_data
 
         self._spice_off = 0
-
-        self._pairsfile = None
-        if pairsfile is not None:
-            self._pairsfile = open(pairsfile, 'w')
 
         self.dists = []
 
@@ -139,11 +134,57 @@ class FeatureBuilder(object):
         self.jaro_simi_idx = None
         self.jaro_winkler_simi_idx = None
 
+        self.lev_simi_file = None
+        self.geodist_file = None
+        self.ped_simi_fw_file = None
+        self.ped_simi_bw_file = None
+        self.sed_simi_fw_file = None
+        self.sed_simi_bw_file = None
+        self.jaccard_simi_file = None
+        self.missing_ngram_count_file = None
+        self.bts_file = None
+        self.jaro_simi_file = None
+        self.jaro_winkler_simi_file = None
+
         self.matrix = csr_matrix(([], [], [0]), shape=(
             0, self.num_feats + 1 + self.topk),
             dtype=uint8)
 
         self.prepare_features()
+
+    def __del__(self):
+        if self.lev_simi_file is not None:
+            self.lev_simi_file.close()
+
+        if self.geodist_file is not None:
+            self.geodist_file.close()
+
+        if self.ped_simi_fw_file is not None:
+            self.ped_simi_fw_file.close()
+
+        if self.ped_simi_bw_file is not None:
+            self.ped_simi_bw_file.close()
+
+        if self.sed_simi_fw_file is not None:
+            self.sed_simi_fw_file.close()
+
+        if self.sed_simi_bw_file is not None:
+            self.sed_simi_bw_file.close()
+
+        if self.jaccard_simi_file is not None:
+            self.jaccard_simi_file.close()
+
+        if self.missing_ngram_count_file is not None:
+            self.missing_ngram_count_file.close()
+
+        if self.bts_file is not None:
+            self.bts_file.close()
+
+        if self.jaro_simi_file is not None:
+            self.jaro_simi_file.close()
+
+        if self.jaro_winkler_simi_file is not None:
+            self.jaro_winkler_simi_file.close()
 
     def get_feat_idx(self, feat):
         return self.feature_idx[feat]
@@ -595,25 +636,6 @@ class FeatureBuilder(object):
         if sid1 is not None and sid2 is not None:
             # write pair to store
             self._pairs.append((sid1, sid2))
-
-            if self._pairsfile is not None:
-                # write pair to pairs file
-                wsid1 = sid1
-                wsid2 = sid2
-
-                if st1.spice_id is not None:
-                    wsid1 = st1.spice_id
-                if st2.spice_id is not None:
-                    wsid2 = st2.spice_id
-
-                if st1.lat is None:
-                    self.log.warn(
-                        "TODO: Cannot write polygons to station file")
-                else:
-                    d = '\t'.join([str(wsid1), st1.name.replace("\t", " "), str(st1.lat),
-                                   str(st1.lon), str(wsid2), st2.name.replace("\t", " "),
-                                   str(st2.lat), str(st2.lon), str(int(match))])
-                    self._pairsfile.write(d + '\n')
 
     def get_feature_vec(self, st1, st2):
         data = []

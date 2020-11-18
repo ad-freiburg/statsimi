@@ -163,12 +163,15 @@ def main():
 
     # feature matrices
     X_test = None
+    X_train = None
 
     # if the datasets are subsetted, these are the original indices
     test_idx = None
+    train_idx = None
 
     # classes, 1 = similar, 0 = not similar
     y_test = None
+    y_train = None
 
     model = None
     ngram_model = None
@@ -199,8 +202,11 @@ def main():
         exit(1)
 
     if args.cmd[0] == "pairs":
+        logging.info(" === Pairs out mode ===\n")
         # special null method which doesn't build any features
         args.method = "null";
+        args.topk = 0
+        args.model_out = None
 
     mb = ModelBuilder(args.method, args.norm_file, args.voting, args.unique, args.with_polygons)
 
@@ -230,24 +236,7 @@ def main():
 
         exit(0)
 
-    if args.cmd[0] == "pairs":
-        logging.info(" === Writing pairs file ===\n")
-
-        if args.train is None or args.pairs_train_out is None:
-            logging.error("Please give the input data as a parameter to --train, and the output file as a parameter to --pairs_train_out.")
-            exit(1)
-
-        model, ngram_model, fbargs, test_data, X_test, y_test, test_idx = mb.build(
-            trainfiles=args.train, p=args.p,
-            modelargs=modelargs, fbargs={
-                "spice": args.spice,
-                "cutoffdist": args.cutoffdist,
-                "topk": 0,
-                "pairsfile": args.pairs_train_out,
-                "clean_data": args.clean_data
-            })
-
-        exit(0)
+    # TODO: pairs mode is just train mode with method null, topk=0 and model output discarded
 
     if args.model:
         logging.info("Reading trained model from " + args.model)
@@ -257,17 +246,16 @@ def main():
             ngram_model = tmp["ngram"]
             fbargs_model = tmp["fbargs"]
     elif args.train:
-        logging.info("Training model from '%s'", ", ".join(args.train))
+        logging.info("Building model from %.1f%% of '%s'", args.p * 100, ", ".join(args.train))
         # this also builds test data from the part of the training data
         # that is not used for training - if explicit test data is given,
         # the test data is overwritten below
-        model, ngram_model, fbargs, test_data, X_test, y_test, test_idx = mb.build(
+        model, ngram_model, fbargs, test_data, X_test, y_test, test_idx, train_data, X_train, y_train, train_idx = mb.build(
             trainfiles=args.train, p=args.p,
             modelargs=modelargs, fbargs={
                 "spice": args.spice,
                 "cutoffdist": args.cutoffdist,
                 "topk": args.topk,
-                "pairsfile": args.pairs_train_out,
                 "clean_data": args.clean_data
             })
 
@@ -284,14 +272,13 @@ def main():
         exit(1)
 
     if args.test:
-        # if prediction dataset was given, use it
+        # if prediction dataset was explicitly given, use it
         logging.info("Test dataset(s) '%s' were given" % ", ".join(args.test))
 
         fbargs = fbargs_model
         fbargs["spice"] = args.spice
         fbargs["cutoffdist"] = args.cutoffdist
         fbargs["force_orphans"] = args.cmd[0] == "fix"
-        fbargs["pairsfile"] = args.pairs_test_out
         fbargs["clean_data"] = args.clean_data
         fbargs["ngram_idx"] = ngram_model  # re-use the model ngrams
         fbargs["topk"] = len(ngram_model[2])  # re-use the top k
@@ -301,6 +288,19 @@ def main():
         y_test = tm[:, -1].toarray().ravel()
         X_test = tm[:, :-1]
         test_idx = None
+    else:
+        logging.info("Using remaining %.1f%% of '%s' as test dataset.", (1 - args.p) * 100, ", ".join(args.train))
+
+
+    # write train pairs file
+    if args.pairs_train_out is not None:
+        logging.info("Writing train data to %s..." % args.pairs_train_out)
+        mb.write_pairs(args.pairs_train_out, train_data, train_idx, y_train)
+
+    # write test pairs file
+    if args.pairs_test_out is not None:
+        logging.info("Writing test data to %s..." % args.pairs_test_out)
+        mb.write_pairs(args.pairs_test_out, test_data, test_idx, y_test)
 
     if args.cmd[0] == "evaluate":
         logging.info(" === Evaluation mode ===\n")
@@ -331,7 +331,6 @@ def main():
         fbargs["spice"] = args.spice
         fbargs["cutoffdist"] = args.cutoffdist
         fbargs["force_orphans"] = False
-        fbargs["pairsfile"] = None
         fbargs["clean_data"] = False
         fbargs["ngram_idx"] = ngram_model  # re-use the model ngrams
         fbargs["topk"] = len(ngram_model[2])  # re-use the top k

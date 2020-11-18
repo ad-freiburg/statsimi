@@ -164,7 +164,7 @@ class ModelBuilder(object):
         test_idx = None
         train_idx = None
 
-        if model is not None and X.shape[0] > 0:
+        if X.shape[0] > 0:
             if p == 1:
                 X_train = X
                 y_train = y
@@ -172,15 +172,40 @@ class ModelBuilder(object):
                 X_train, X_test, y_train, y_test, train_idx, test_idx = \
                     train_test_split(X, y, ind, train_size=p, random_state=0)
 
-            self.log.info("Fitting using %d%% of train data..." % (p * 100))
-            args = {
-                "X": X_train,
-                "y": y_train,
-                "train_data": train_data,
-                "train_data_idx": train_idx}
-            model.fit(**pick_args(model.fit, args))
+            if model is not None:
+                self.log.info("Fitting using %d%% of train data..." % (p * 100))
+                args = {
+                    "X": X_train,
+                    "y": y_train,
+                    "train_data": train_data,
+                    "train_data_idx": train_idx}
+                model.fit(**pick_args(model.fit, args))
 
-        return model, ngram_model, fbargs, test_data, X_test, y_test, test_idx
+        return model, ngram_model, fbargs, test_data, X_test, y_test, test_idx, train_data, X_train, y_train, train_idx
+
+    def write_pairs(self, outfile, data, idx, y):
+        with open(outfile, 'w') as f:
+            for i, pid in enumerate(idx):
+                match = y[i]
+                sid1 = data.pairs[pid][0]
+                sid2 = data.pairs[pid][1]
+
+                st1 = data.stations[sid1]
+                st2 = data.stations[sid2]
+
+                if st1.spice_id is not None:
+                    sid1 = st1.spice_id
+                if st2.spice_id is not None:
+                    sid2 = st2.spice_id
+
+                if st1.lat is None or st2.lat is None:
+                    self.log.warn(
+                        "TODO: Cannot write polygons to station file")
+                else:
+                    d = '\t'.join([str(sid1), st1.name.replace("\t", " "), str(st1.lat),
+                                   str(st1.lon), str(sid2), st2.name.replace("\t", " "),
+                                   str(st2.lat), str(st2.lon), str(int(match))])
+                    f.write(d + '\n')
 
     def file_type(self, path):
         if path[-3:] == 'bz2':

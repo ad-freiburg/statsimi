@@ -222,19 +222,15 @@ class OsmParser(object):
         Parse an OSM XML file.
         '''
 
-        self.log.info("First pass, parsing relations...")
-
         self.parse_relations(osm_file, unique);
 
         for gid, g in enumerate(self.groups):
             if g.osm_rel_id in self.rel_meta_group_idx:
                 g.set_meta_group(self.rel_meta_group_idx[g.osm_rel_id])
 
-        self.log.info("Second pass, parsing ways...")
         if with_polygons:
             self.parse_ways(osm_file, unique);
 
-        self.log.info("Third pass, parsing nodes...")
         self.parse_nodes(osm_file, unique);
 
         self.log.info("Building station polygons")
