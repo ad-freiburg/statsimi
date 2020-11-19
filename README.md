@@ -49,7 +49,7 @@ statsimi model --model_out classify.mod --train germany-latest.osm.bz2
 Write a fix file `germany.fix` for `germany-latest.osm` based on the previously build model:
 
 ```
-statsimi fix --model classify.mod --fix_out germany.fix --test germany-latest.osm
+statsimi fix --model classify.mod --fix_out germany.fix --test germany-latest.osm.bz2
 ```
 
 # General Usage
