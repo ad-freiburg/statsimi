@@ -75,8 +75,6 @@ class FeatureBuilder(object):
         self._pairs = []
         self.clean_data = clean_data
 
-        self._spice_off = 0
-
         self.dists = []
 
         # a high number of pos pairs may lead to local overfitting
@@ -635,7 +633,11 @@ class FeatureBuilder(object):
 
         if sid1 is not None and sid2 is not None:
             # write pair to store
-            self._pairs.append((sid1, sid2))
+            if st2.spice_id is not None:
+                # the second station may be a spiced one
+                self._pairs.append((sid1, st2.spice_id))
+            else:
+                self._pairs.append((sid1, sid2))
 
     def get_feature_vec(self, st1, st2):
         data = []
@@ -781,8 +783,8 @@ class FeatureBuilder(object):
                     st2 = copy.copy(self._stats[sid2])
                     st2.lon = st1.lon + random.gauss(0, 0.0005)
                     st2.lat = st1.lat + random.gauss(0, 0.0005)
-                    st2.spice_id = len(self._stats) + self._spice_off
-                    self._spice_off += 1
+                    st2.spice_id = len(self._stats)
+                    self._stats.append(st2)
                 else:
                     st2 = self._stats[sid2]
 
@@ -806,6 +808,7 @@ class FeatureBuilder(object):
                     continue
 
                 matched[sid1].add(sid2)
+
                 self.write_row(sid1, sid2, st1, st2, False, data, ind, iptr)
                 count += 1
 

@@ -75,10 +75,10 @@ class ParamEvaluator(object):
         self.log.info("")
 
         if test_data is None:
-            model, ngram_model, _, _, X_test, y_test, test_idx = mb.build_model(train_data, self.p, modelargs)
+            model, ngram_model, _, _, X_test, y_test, test_idx, train_data, X_train, y_train, train_idx = mb.build_model(train_data, self.p, modelargs)
             test_data = train_data
         else:
-            model, ngram_model, _, _, _, _, _ = mb.build_model(train_data, self.p, modelargs)
+            model, ngram_model, _, _, _, _, _, _, _, _, _ = mb.build_model(train_data, self.p, modelargs)
 
         args = {"X": X_test, "test_data": test_data, "test_data_idx": test_idx}
 

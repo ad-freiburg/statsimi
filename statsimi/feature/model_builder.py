@@ -161,6 +161,8 @@ class ModelBuilder(object):
         ind = np.arange(X.shape[0])
         X_test = None
         y_test = None
+        X_train = None
+        y_train = None
         test_idx = None
         train_idx = None
 
@@ -192,11 +194,6 @@ class ModelBuilder(object):
 
                 st1 = data.stations[sid1]
                 st2 = data.stations[sid2]
-
-                if st1.spice_id is not None:
-                    sid1 = st1.spice_id
-                if st2.spice_id is not None:
-                    sid2 = st2.spice_id
 
                 if st1.lat is None or st2.lat is None:
                     self.log.warn(
