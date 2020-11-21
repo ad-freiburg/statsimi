@@ -142,6 +142,11 @@ def main():
     )
 
     parser.add_argument(
+        '--runs', type=int, default=5,
+        help='For param evaluator, number of averaged runs'
+    )
+
+    parser.add_argument(
         '--eval-out', type=str, default=".",
         help='output directory for evaluation run'
     )
@@ -231,7 +236,8 @@ def main():
             outputdir=args.eval_out,
             voting=args.voting,
             unique_names=args.unique,
-            with_polygons=args.with_polygons)
+            with_polygons=args.with_polygons,
+            runs=args.runs)
         pareval.evaluate()
 
         exit(0)

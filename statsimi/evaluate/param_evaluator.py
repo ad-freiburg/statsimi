@@ -41,7 +41,8 @@ class ParamEvaluator(object):
             outputdir=".",
             voting="soft",
             unique_names=False,
-            with_polygons=False):
+            with_polygons=False,
+            runs=5):
         self.p = p
         self.log = logging.getLogger('pareval')
         self.method = method
@@ -58,14 +59,14 @@ class ParamEvaluator(object):
         self.with_polygons = with_polygons
 
         # number of evaluation runs per test
-        self.runs = 5
+        self.runs = runs
 
     def merge_pars(self, a, b):
         c = a.copy()
         c.update(b)
         return c
 
-    def run(self, run, mb, X_test, y_test, test_idx, train_data, test_data,
+    def run(self, run, mb, train_data, run_testfile,
             modelargs, fbargs, precs, recs, f1s, p_neg, r_neg, f1_neg,
             p_pos, r_pos, f1_pos, conf_ms):
         self.log.info("======================================================")
@@ -74,11 +75,24 @@ class ParamEvaluator(object):
         self.log.info("    modelargs=" + repr(modelargs))
         self.log.info("")
 
-        if test_data is None:
+        test_data = None
+        y_test = None
+        X_test = None
+        test_idx = None
+
+        if run_testfile:
+            model, ngram_model, _, _, _, _, _, _, _, _, _ = mb.build_model(train_data, self.p, modelargs)
+            # if testfile is given, build the test data from them
+            if run_testfile:
+                fbargs_test = fbargs.copy()
+                fbargs_test["ngram_idx"] = ngram_model
+                test_data = mb.build_from_file(run_testfile, fbargs_test)
+                tm = test_data.get_matrix()
+                y_test = tm[:, -1].toarray().ravel()
+                X_test = tm[:, :-1]
+        else:
             model, ngram_model, _, _, X_test, y_test, test_idx, train_data, X_train, y_train, train_idx = mb.build_model(train_data, self.p, modelargs)
             test_data = train_data
-        else:
-            model, ngram_model, _, _, _, _, _, _, _, _, _ = mb.build_model(train_data, self.p, modelargs)
 
         args = {"X": X_test, "test_data": test_data, "test_data_idx": test_idx}
 
@@ -87,6 +101,8 @@ class ParamEvaluator(object):
         precs[run].append(precision_score(y_test, y_pred, average='macro'))
         recs[run].append(recall_score(y_test, y_pred, average='macro'))
         f1s[run].append(f1_score(y_test, y_pred, average='macro'))
+
+
 
         p_neg[run].append(precision_score(y_test, y_pred, average=None)[0])
         r_neg[run].append(recall_score(y_test, y_pred, average=None)[0])
@@ -135,27 +151,39 @@ class ParamEvaluator(object):
              for p in self.modeltestargs.keys()]
         modelargs_prod = list(it.product(*b))
 
+        if len(self.testfiles) > 1 and self.runs != len(self.testfiles):
+            self.log.error("%d runs for param evaluator requested, by %d test files were given. Either give the exact same number of test files as the requested number of runs, then run N will use testfiles[N]. Or give one test file, then each run will use the same test file." %
+                          len(self.testfiles), self.runs)
+            exit(1)
+
+        if len(self.trainfiles) > 1  and self.runs != len(self.trainfiles):
+            self.log.error("%d runs for param evaluator requested, by %d train files were given. Either give the exact same number of train files as the requested number of runs, then run N will use trainfiles[N]. Or give one train file, then each run will use the same train file." %
+                          len(self.testfiles), self.runs)
+            exit(1)
+
+
         for run in range(self.runs):
             if self.runs > 1:
                 self.log.info("Run " + str(run + 1) + "/" + str(self.runs))
 
+            run_testfile = []
+            run_trainfile = []
+
+            if len(self.trainfiles) > 1:
+                run_trainfile = [self.trainfiles[run]]
+            elif len(self.trainfiles) == 1:
+                run_trainfile = self.trainfiles
+
+            if len(self.testfiles) > 1:
+                run_testfile = [self.testfiles[run]]
+            elif len(self.testfiles) == 1:
+                run_testfile = self.testfiles
+
+            self.log.info("Running on trainfile %s, testfile %s", run_trainfile, run_testfile)
+
             for fbargs_cur in fbargs_prod:
                 fbargs = self.merge_pars(fbargs_base, fbargs_cur)
-                train_data = mb.build_from_file(self.trainfiles, fbargs)
-                test_data = None
-                y_test = None
-                X_test = None
-                test_idx = None
-
-                # if testfiles are given, build the test data from them
-                # if they are not given, test_data will be set to the
-                # train data in run() and y_test and X_test will be based
-                # on the part of train data that is not used for training
-                if self.testfiles:
-                    test_data = mb.build_from_file(self.testfiles, fbargs)
-                    tm = test_data.get_matrix()
-                    y_test = tm[:, -1].toarray().ravel()
-                    X_test = tm[:, :-1]
+                train_data = mb.build_from_file(run_trainfile, fbargs)
 
                 for modelargs_cur in modelargs_prod:
                     modelargs = self.merge_pars(modelargs_base, modelargs_cur)
@@ -164,8 +192,8 @@ class ParamEvaluator(object):
                         fbargs_col.append(fbargs)
                         modelargs_col.append(modelargs)
 
-                    self.run(run, mb, X_test, y_test, test_idx, train_data,
-                        test_data, modelargs, fbargs, precs, recs, f1s,
+                    self.run(run, mb, train_data,
+                        run_testfile, modelargs, fbargs, precs, recs, f1s,
                         p_neg, r_neg, f1_neg, p_pos, r_pos, f1_pos,
                         confusion_matrices)
 

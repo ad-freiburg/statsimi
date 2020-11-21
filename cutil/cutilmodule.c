@@ -86,7 +86,9 @@ static int sed(const Py_UNICODE* s1, const Py_UNICODE* s2, unsigned int s1len,
 
 static double jaro(const Py_UNICODE* s1, const Py_UNICODE* s2, unsigned int s1len,
                    unsigned int s2len) {
+  // based on https://rosettacode.org/wiki/Jaro_distance
   if (s1len == 0) return s2len == 0 ? 1.0 : 0.0;
+  if (s2len == 0) return s1len == 0 ? 1.0 : 0.0;
 
   // max distance between two chars to be considered matching
   // floor() is ommitted due to integer division rules
@@ -102,7 +104,7 @@ static double jaro(const Py_UNICODE* s1, const Py_UNICODE* s2, unsigned int s1le
   double transpositions = 0.0;
 
   // find the matches
-  for (unsigned int i = 0; i < s1len; i++) {
+  for (int i = 0; i < s1len; i++) {
     // start and end take into account the match distance
     int start = MAX(0, i - match_distance);
     int end = MIN(i + match_distance + 1, s2len);
@@ -129,7 +131,7 @@ static double jaro(const Py_UNICODE* s1, const Py_UNICODE* s2, unsigned int s1le
 
   // count transpositions
   int k = 0;
-  for (unsigned int i = 0; i < s1len; i++) {
+  for (int i = 0; i < s1len; i++) {
     // if there are no matches in str1 continue
     if (!s1_matches[i]) continue;
     // while there is no match in str2 increment k

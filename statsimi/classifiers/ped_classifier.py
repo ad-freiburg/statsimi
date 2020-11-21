@@ -51,6 +51,7 @@ class PrefixEditDistClassifier(object):
         # range
         greater = a > self.threshold * 255.0
         smallereq = a <= self.threshold * 255.0
+
         a[greater] = 0.5 + (a[greater] / 255.0 -
                             self.threshold) / (2.0 * (1.0 - self.threshold))
         a[smallereq] = (a[smallereq] / 255.0) / (2 * self.threshold)

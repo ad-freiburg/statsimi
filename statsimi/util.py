@@ -147,7 +147,14 @@ def jaro_simi(s, t):
     '0.79'
     >>> '%.2f' % jaro_simi("Hauptbahnhof", "Freiburg Hauptbahnhof")
     '0.77'
+    >>> '%.2f' % jaro_simi("Freiburg Runzmattenweg", "Freiburg, Robert-Koch-Straße")
+    '0.72'
+    >>> '%.2f' % jaro_simi("", "Test")
+    '0.00'
+    >>> '%.2f' % jaro_simi("Test", "a")
+    '0.00'
     '''
+    #  print(s, t)
     return cutil.jaro(s, t)
 
 

@@ -476,7 +476,7 @@ class FeatureBuilder(object):
             if self.lev_simi_file and sid1 != sid2:
                 self.lev_simi_file.write("%f\r\n" % (lev_simi))
 
-            lev_simi = int(lev_simi) * 255
+            lev_simi = int(lev_simi * 255)
             lev_simi = self.oflow(lev_simi, st1, st2, 255, "editdist")
 
             if lev_simi > 0:
@@ -634,7 +634,7 @@ class FeatureBuilder(object):
         if sid1 is not None and sid2 is not None:
             # write pair to store
             if st2.spice_id is not None:
-                # the second station may be a spiced one
+                # the second station is a spiced one
                 self._pairs.append((sid1, st2.spice_id))
             else:
                 self._pairs.append((sid1, sid2))

@@ -170,6 +170,8 @@ class ModelBuilder(object):
             if p == 1:
                 X_train = X
                 y_train = y
+                X_test = np.empty(shape=(0, X.shape[1]))
+                y_test = np.empty(shape=(0, 0))
             else:
                 X_train, X_test, y_train, y_test, train_idx, test_idx = \
                     train_test_split(X, y, ind, train_size=p, random_state=0)
