@@ -46,11 +46,15 @@ wget https://download.geofabrik.de/europe/germany-latest.osm.bz2
 statsimi model --model_out classify.mod --train germany-latest.osm.bz2
 ```
 
-Write a fix file `germany.fix` for `germany-latest.osm` based on the previously build model:
+Write a fix file `germany.fix` for `germany-latest.osm` based on the previously build model (you can also download the model [here](https://staty.cs.uni-freiburg.de/datasets/models/europe/dach/model.lib]):
 
 ```
 statsimi fix --model classify.mod --fix_out germany.fix --test germany-latest.osm.bz2
 ```
+
+# Pre-trained models
+
+We provide some pre-trained models [here](https://staty.cs.uni-freiburg.de/datasets/). 
 
 # General Usage
 
