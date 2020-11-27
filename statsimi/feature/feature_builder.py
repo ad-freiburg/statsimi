@@ -379,6 +379,27 @@ class FeatureBuilder(object):
         (172, 46)
         '''
 
+        # filter out station relations which are most likely
+        # a public transport route and have been erroneously tagges
+        if self.clean_data:
+            for gid, group in enumerate(self._grps):
+                if len(group.stats) == 0 or group.osm_rel_id is None:
+                    continue
+                sid1 = group.stats[0]
+                st1 = self._stats[sid1]
+                for id, sid2 in enumerate(group.stats):
+                    st2 = self._stats[sid2]
+                    d = self.dist(st1, st2)
+                    if d < 2000:
+                        continue
+
+                    self.log.warning(
+                        "Filtering out suspicious station group %d "
+                         "(osm rel id %d), is this an erroneously tagged "
+                         "transit route?" % (gid, group.osm_rel_id))
+                    group.stats = []
+                    break
+
         ind, data, iptr = self.prep_matr()
 
         sidx = StationIdx(1000, self.bbox)
@@ -392,7 +413,8 @@ class FeatureBuilder(object):
 
         self.log.info("Writing matrix from %s groups, %s station identifiers"
                       % (len(self._grps), len(self._stats)))
-        self.log.info(" (using features %s)" % ', '.join(self.features))
+        if len(self.features) > 0:
+            self.log.info(" (using features %s)" % ', '.join(self.features))
 
         group_nums_aggr = 0
         group_num = 0
@@ -868,7 +890,8 @@ class FeatureBuilder(object):
             self.feature_idx[
                 'missing_ngram_count'] = self.missing_ngram_count_idx
             if self.write_distr:
-                self.missing_ngram_count_file = open("missing_ngram_count.distr", 'w')
+                self.missing_ngram_count_file = open(
+                    "missing_ngram_count.distr", 'w')
 
         if 'bts_simi' in self.features:
             self.bts_simi_idx = self.num_feats
@@ -889,7 +912,8 @@ class FeatureBuilder(object):
             self.num_feats = self.num_feats + 1
             self.feature_idx['jaro_winkler_simi'] = self.jaro_winkler_simi_idx
             if self.write_distr:
-                self.jaro_winkler_simi_file = open("jaro_winkler_simi.distr", 'w')
+                self.jaro_winkler_simi_file = open(
+                    "jaro_winkler_simi.distr", 'w')
 
         # number of features we use besides the ngram index
         self.num_feats = self.num_feats + 2 * self.num_pos_pairs
