@@ -264,7 +264,7 @@ class OsmParser(object):
 
             is_st_area = 2  # 2 == undecided
             is_meta_st_area = 2  # 2 == undecided
-            curGroup = StatGroup(osm_rel_id=int(c1.attrib["id"]))
+            curGroup = StatGroup(osm_rel_id=int(c1.attrib["id"], 10))
 
             for c2 in c1:
                 if c2.tag != "tag":
@@ -301,10 +301,10 @@ class OsmParser(object):
                     if c2.tag != "member":
                         continue
                     if c2.attrib["type"] == "node":
-                        self.nd_group_idx[int(c2.attrib["ref"])] = len(
+                        self.nd_group_idx[int(c2.attrib["ref"], 10)] = len(
                             self.groups) - 1
                     if c2.attrib["type"] == "way":
-                        self.way_group_idx[int(c2.attrib["ref"])] = len(
+                        self.way_group_idx[int(c2.attrib["ref"], 10)] = len(
                             self.groups) - 1
 
             if is_meta_st_area == 1:
@@ -314,7 +314,7 @@ class OsmParser(object):
                     if c2.attrib["type"] != "relation":
                         continue
                     self.rel_meta_group_idx[int(
-                        c2.attrib["ref"])] = c1.attrib["id"]
+                        c2.attrib["ref"], 10)] = c1.attrib["id"]
 
             if i % BUFFER == 0:
                 root.clear()
@@ -345,7 +345,7 @@ class OsmParser(object):
                     root.clear()
                 continue
 
-            nid = int(c1.attrib["id"])
+            nid = int(c1.attrib["id"], 10)
             lat = float(c1.attrib["lat"])
             lon = float(c1.attrib["lon"])
 
@@ -470,13 +470,13 @@ class OsmParser(object):
                     root.clear()
                 continue
 
-            wid = int(c1.attrib["id"])
+            wid = int(c1.attrib["id"], 10)
             self.way_nds[wid] = []
 
             is_station = False
             for c2 in c1:
                 if c2.tag == "nd":
-                    nid = int(c2.attrib["ref"])
+                    nid = int(c2.attrib["ref"], 10)
                     self.way_kept_nds.add(nid)
                     self.way_nds[wid].append(nid)
                 if c2.tag != "tag":

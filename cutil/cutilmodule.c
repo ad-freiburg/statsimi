@@ -84,8 +84,8 @@ static int sed(const Py_UNICODE* s1, const Py_UNICODE* s2, unsigned int s1len,
   return min;
 }
 
-static double jaro(const Py_UNICODE* s1, const Py_UNICODE* s2, unsigned int s1len,
-                   unsigned int s2len) {
+static double jaro(const Py_UNICODE* s1, const Py_UNICODE* s2, int s1len,
+                   int s2len) {
   // based on https://rosettacode.org/wiki/Jaro_distance
   if (s1len == 0) return s2len == 0 ? 1.0 : 0.0;
   if (s2len == 0) return s1len == 0 ? 1.0 : 0.0;

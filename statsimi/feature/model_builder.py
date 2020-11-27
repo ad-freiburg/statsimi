@@ -8,6 +8,7 @@ Patrick Brosi <brosi@informatik.uni-freiburg.de>
 import logging
 import numpy as np
 import math
+import csv
 
 from statsimi.osm.osm_parser import OsmParser
 from statsimi.feature.feature_builder import FeatureBuilder
@@ -87,7 +88,7 @@ class ModelBuilder(object):
             method = method.strip()
             if method == "rf":
                 args = {"n_estimators": 100, "random_state": 0,
-                        "verbose": 1, "n_jobs": -1}
+                        "verbose": 0, "n_jobs": -1}
                 modelargs.update(args)
                 args = pick_args(RandomForestClassifier.__init__, modelargs)
                 models.append(RandomForestClassifier(**args))
@@ -225,12 +226,12 @@ class ModelBuilder(object):
             for line in f:
                 lparts = line.split("\t")
 
-                sid1 = int(lparts[0])
+                sid1 = int(lparts[0], 10)
                 sname1 = lparts[1]
                 lat1 = float(lparts[2])
                 lon1 = float(lparts[3])
 
-                sid2 = int(lparts[4])
+                sid2 = int(lparts[4], 10)
                 sname2 = lparts[5]
                 lat2 = float(lparts[6])
                 lon2 = float(lparts[7])
@@ -278,7 +279,7 @@ class ModelBuilder(object):
         meths = self.method.split(",")
         fbargs['features'] = list(
             set(sum([meth_feats.get(m.strip(), []) for m in meths], [])))
-        self.log.info("Building features...")
+        self.log.info("Parsing station pairs...")
 
         # build dataset from OSM file
         osmp = OsmParser()
@@ -297,12 +298,14 @@ class ModelBuilder(object):
                     exit(1)
                 osmp.parse_xml(filepath, unique=self.unique_names, with_polygons=self.with_polygons)
                 t = "osm"
+                bounds = osmp.bounds
             if self.file_type(filepath) == "osm_bzip":
                 if t == "pfile":
                     self.log.error("Cannot mix OSM and pairs input files")
                     exit(1)
                 osmp.parse_bz2(filepath, unique=self.unique_names, with_polygons=self.with_polygons)
                 t = "osm"
+                bounds = osmp.bounds
             if self.file_type(filepath) == "pfile":
                 if t == "osm":
                     self.log.error("Cannot mix OSM and pairs input files")
@@ -310,8 +313,7 @@ class ModelBuilder(object):
                 self.parse_pairs(filepath, stations, pairs, simi, bounds)
                 t = "pfile"
 
-        if t == "osm":
-            bounds = osmp.bounds
+        self.log.info("Building features...")
 
         f = FeatureBuilder(bbox=bounds, **fbargs)
 

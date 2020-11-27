@@ -58,6 +58,10 @@ class ParamEvaluator(object):
         self.unique = unique_names
         self.with_polygons = with_polygons
 
+        self.fbargs_test_prev = None
+        self.run_testfile_prev = None
+        self.test_data_prev = None
+
         # number of evaluation runs per test
         self.runs = runs
 
@@ -84,9 +88,19 @@ class ParamEvaluator(object):
             model, ngram_model, _, _, _, _, _, _, _, _, _ = mb.build_model(train_data, self.p, modelargs)
             # if testfile is given, build the test data from them
             if run_testfile:
-                fbargs_test = fbargs.copy()
-                fbargs_test["ngram_idx"] = ngram_model
-                test_data = mb.build_from_file(run_testfile, fbargs_test)
+                if run_testfile == self.run_testfile_prev and fbargs == self.fbargs_test_prev:
+                    self.log.info("(Using previously parsed test data)")
+                    fbargs_test = fbargs.copy()
+                    fbargs_test["ngram_idx"] = ngram_model
+                    test_data = self.test_data_prev
+                else:
+                    fbargs_test = fbargs.copy()
+                    fbargs_test["ngram_idx"] = ngram_model
+                    test_data = mb.build_from_file(run_testfile, fbargs_test)
+
+                self.fbargs_test_prev = fbargs
+                self.run_testfile_prev = run_testfile
+                self.test_data_prev = test_data
                 tm = test_data.get_matrix()
                 y_test = tm[:, -1].toarray().ravel()
                 X_test = tm[:, :-1]
@@ -101,8 +115,6 @@ class ParamEvaluator(object):
         precs[run].append(precision_score(y_test, y_pred, average='macro'))
         recs[run].append(recall_score(y_test, y_pred, average='macro'))
         f1s[run].append(f1_score(y_test, y_pred, average='macro'))
-
-
 
         p_neg[run].append(precision_score(y_test, y_pred, average=None)[0])
         r_neg[run].append(recall_score(y_test, y_pred, average=None)[0])
