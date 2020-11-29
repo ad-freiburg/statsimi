@@ -11,7 +11,6 @@ from .evaluate.evaluator import Evaluator
 from .feature.feature_builder import FeatureBuilder
 from .feature.model_builder import ModelBuilder
 from .serv.classifier_server import ClassifierServer
-import pickle
 import argparse
 import time
 import logging
@@ -246,11 +245,7 @@ def main():
 
     if args.model:
         logging.info("Reading trained model from " + args.model)
-        with open(args.model, "rb") as f:
-            tmp = pickle.load(f)
-            model = tmp["model"]
-            ngram_model = tmp["ngram"]
-            fbargs_model = tmp["fbargs"]
+        model, ngram_model, fbargs_model = mb.unpickle(args.model)
     elif args.train:
         logging.info("Building model from %.1f%% of '%s'", args.p * 100, ", ".join(args.train))
         # this also builds test data from the part of the training data
@@ -270,9 +265,7 @@ def main():
         # dump model
         if args.cmd[0] == "model":
             if len(args.model_out) > 0:
-                with open(args.model_out, "wb") as f:
-                    pickle.dump({"model": model, "ngram": ngram_model,
-                                 "fbargs": fbargs_model}, f, protocol=4)
+                mb.dump(args.model_out, model, ngram_model, fbargs_model)
     else:
         logging.error("No model (--model) or training data (--train) given.")
         exit(1)
@@ -342,7 +335,6 @@ def main():
         fbargs["topk"] = len(ngram_model[2])  # re-use the top k
 
         fb = FeatureBuilder(bbox=None, **fbargs)
-        fb.build_ngrams()
 
         serv = ClassifierServer(args.http_port, fb, model)
         serv.run()

@@ -42,7 +42,7 @@ class FeatureBuilder(object):
 
     def __init__(
         self,
-        bbox,
+        bbox=None,
         ngram_idx=None,
         force_orphans=False,
         spice=0,
@@ -100,21 +100,22 @@ class FeatureBuilder(object):
 
         self.reuse_ngram_idx = False
 
+        self.topk = topk
+        self.ngram = ngram
+
         if ngram_idx:
             self.log.info("Using giving ngrams from existing model...")
             self.reuse_ngram_idx = True
             self.ngram_id_idx = ngram_idx[0].copy()
             self.id_ngram_idx = ngram_idx[1].copy()
             self.top_ngrams = ngram_idx[2].copy()
-
-        self.topk = topk
+            self.build_ngrams()
 
         self.features = features
         self.num_feats = 0
         self.feature_idx = {}
 
         self.bbox = bbox
-        self.ngram = ngram
 
         # The cutoff distance is the distance in meters at which we say that
         # two stations are certainly not equivalent

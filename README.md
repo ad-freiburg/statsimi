@@ -146,3 +146,48 @@ statsimi fix --model <model_file> --test <osm_data> --fix_out <fix_file>
 ```
 
 where `<model_file>` is a pre-trained model and `<osm_data>` is an OSM file containing the data to be fixed. `statsimi` will analyze the input OSM data and output suggestions to stdout as well as into a file `<fix_file>` in a machine readable format (TODO: documentation of this format).
+
+
+## As a library
+
+With a pre-trained model:
+
+```
+from statsimi.feature.model_builder import ModelBuilder
+from statsimi.feature.feature_builder import FeatureBuilder
+from statsimi.feature.stat_ident import StatIdent
+
+mb = ModelBuilder()
+
+model, ngram_idx, fbargs = mb.unpickle("model.lib")
+
+fb = FeatureBuilder(ngram_idx = ngram_idx, topk = ngram_idx[2], **fbargs)
+
+stat1 = StatIdent(name="Main Street", lat=51.52010, lon=-0.14270)
+stat2 = StatIdent(name="High Street", lat=51.52035, lon=-0.14140)
+
+res = model.predict(fb.get_feature_vec(stat1, stat2))
+
+print(res)
+```
+
+Without a pre-trained model:
+
+```
+from statsimi.feature.model_builder import ModelBuilder
+from statsimi.feature.feature_builder import FeatureBuilder
+from statsimi.feature.stat_ident import StatIdent
+
+mb = ModelBuilder()
+model, ngram_idx = mb.build(trainfiles=["britain-and-ireland-latest.osm.bz2"])
+
+# re-use ngrams from model builder
+fb = FeatureBuilder(ngram_idx = ngram_idx, topk = ngram_idx[2])
+
+stat1 = StatIdent(name="Main Street", lat=51.52010, lon=-0.14270)
+stat2 = StatIdent(name="High Street", lat=51.52035, lon=-0.14140)
+
+res = model.predict(fb.get_feature_vec(stat1, stat2))
+
+print(res)
+```

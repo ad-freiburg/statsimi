@@ -8,7 +8,7 @@ Patrick Brosi <brosi@informatik.uni-freiburg.de>
 import logging
 import numpy as np
 import math
-import csv
+import pickle
 
 from statsimi.osm.osm_parser import OsmParser
 from statsimi.feature.feature_builder import FeatureBuilder
@@ -71,6 +71,16 @@ class ModelBuilder(object):
 
         if norm_rule_file:
             self.normzer = Normalizer(norm_rule_file)
+
+    def unpickle(self, path):
+        with open(path, "rb") as f:
+            tmp = pickle.load(f)
+            return tmp["model"], tmp["ngram"], tmp["fbargs"]
+
+    def dump(self, path, model, ngram_model, fbargs_model):
+        with open(path, "wb") as f:
+            pickle.dump({"model": model, "ngram": ngram_model,
+                         "fbargs": fbargs_model}, f, protocol=4)
 
     def build(self, trainfiles=[], p=0.2, modelargs={}, fbargs={}):
         train_data = self.build_from_file(trainfiles, fbargs)
