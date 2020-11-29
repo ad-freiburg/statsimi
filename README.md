@@ -152,7 +152,7 @@ where `<model_file>` is a pre-trained model and `<osm_data>` is an OSM file cont
 
 With a pre-trained model:
 
-```
+```python
 from statsimi.feature.model_builder import ModelBuilder
 from statsimi.feature.feature_builder import FeatureBuilder
 from statsimi.feature.stat_ident import StatIdent
@@ -173,7 +173,7 @@ print(res)
 
 Without a pre-trained model:
 
-```
+```python
 from statsimi.feature.model_builder import ModelBuilder
 from statsimi.feature.feature_builder import FeatureBuilder
 from statsimi.feature.stat_ident import StatIdent
