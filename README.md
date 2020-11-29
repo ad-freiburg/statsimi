@@ -23,33 +23,33 @@ Framework for station similarity classification.
 
 Fetch this repository:
 
-```
-git clone https://github.com/ad-freiburg/statsimi
-cd statsimi
+```bash
+$ git clone https://github.com/ad-freiburg/statsimi
+$ cd statsimi
 ```
 Create virtual environment
-```
-python3 -m venv venv
-source venv/bin/activate
+```bash
+$ python3 -m venv venv
+$ source venv/bin/activate
 ```
 Build & Install
-```
-pip install .
+```bash
+$ pip install .
 ```
 
 # Quickstart
 
 Build a classification model `classify.mod` for Germany (uses a random 20% of the input as training samples per default):
 
-```
-wget https://download.geofabrik.de/europe/germany-latest.osm.bz2
-statsimi model --model_out classify.mod --train germany-latest.osm.bz2
+```bash
+$ wget https://download.geofabrik.de/europe/germany-latest.osm.bz2
+$ statsimi model --model_out classify.mod --train germany-latest.osm.bz2
 ```
 
 Write a fix file `germany.fix` for `germany-latest.osm` based on the previously build model (you can also download the model [here](https://staty.cs.uni-freiburg.de/datasets/models/europe/dach/model.lib)):
 
-```
-statsimi fix --model classify.mod --fix_out germany.fix --test germany-latest.osm.bz2
+```bash
+$ statsimi fix --model classify.mod --fix_out germany.fix --test germany-latest.osm.bz2
 ```
 
 # Pre-trained models
@@ -72,8 +72,8 @@ The following basic commands are supported:
 
 Instead of parsing the OSM data on each run, it is possible to generate the station pairs file once and use it instead of an OSM file:
 
-```
-statsimi pairs --test <input> --pairs_train_out <output>
+```bash
+$ statsimi pairs --test <input> --pairs_train_out <output>
 ```
 
 The pairs file is a tab separated file with the following fields: `station1_id`, `station1_name`, `station1_lat`, `station1_lon`, `station2_id`, `station2_name`, `station2_lat`, `station2_lon`, `similar`.
@@ -86,15 +86,15 @@ Example rows:
 ```
 
 ## Train a model
-```
-statsimi model --train <train_input> -p <train_perc> --model_out <model_file> --method <method>
+```bash
+$ statsimi model --train <train_input> -p <train_perc> --model_out <model_file> --method <method>
 ```
 where `method` may be one of those listed in `statsimi --help`.
 
 ## Classification server
 Using a previously trained model, a classification HTTP server can be started like this:
-```
-statsimi http --model <model_file> --http_port <port>
+```bash
+$ statsimi http --model <model_file> --http_port <port>
 ```
 
 A GUI for playing around with the model will then be available at `http://localhost:<port>`.
@@ -110,11 +110,11 @@ http://localhost:<port>/api?name1=Bertoldsbrunnen&lat1=47.995662&lon1=7.846041&n
 
 The answer will be
 
-```
+```json
 {"res": 1}
 ```
 if the two stations are similar, or
-```
+```json
 {"res": 0}
 ```
 if they are not similar.
@@ -123,16 +123,16 @@ if they are not similar.
 
 To evaluate a model against a ground truth, use
 
-```
-statsimi evaluate --model <model_file> --test <osm_data>
+```bash
+$ statsimi evaluate --model <model_file> --test <osm_data>
 ```
 
 where `<model_file>` is a pre-trained model and `<osm_data>` is a OSM file (the ground truth data). `statsimi` will output precision, recall, F1 score, a confusion matrix and typical true positives, true negatives, false positives and false negatives.
 
 You can also directly evaluate a method without building a model first:
 
-```
-statsimi evaluate --train <osm_data> --method=rf -p=0.2
+```bash
+$ statsimi evaluate --train <osm_data> --method=rf -p=0.2
 ```
 
 will train on 20% of ``<osm_data>`` and test the model against the remaining 80%.
@@ -141,8 +141,8 @@ will train on 20% of ``<osm_data>`` and test the model against the remaining 80%
 
 To fix OSM data, use
 
-```
-statsimi fix --model <model_file> --test <osm_data> --fix_out <fix_file>
+```bash
+$ statsimi fix --model <model_file> --test <osm_data> --fix_out <fix_file>
 ```
 
 where `<model_file>` is a pre-trained model and `<osm_data>` is an OSM file containing the data to be fixed. `statsimi` will analyze the input OSM data and output suggestions to stdout as well as into a file `<fix_file>` in a machine readable format (TODO: documentation of this format).
