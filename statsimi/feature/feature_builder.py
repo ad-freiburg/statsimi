@@ -377,7 +377,7 @@ class FeatureBuilder(object):
         >>> fb = FeatureBuilder(bbox=p.bounds)
         >>> fb.build_from_stat_grp(p.stations, p.groups)
         >>> fb.get_matrix().shape
-        (172, 46)
+        (344, 46)
         '''
 
         # filter out station relations which are most likely
