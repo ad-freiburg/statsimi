@@ -10,6 +10,7 @@ from urllib import parse
 from statsimi.util import hav
 import logging
 import os
+import json
 from statsimi.feature.stat_ident import StatIdent
 
 HOST_NAME = '0.0.0.0'
@@ -81,6 +82,8 @@ def makeHandler(fb, model, log):
                 s2.lat,
                 s2.lon)
 
+            json_features = {}
+
             # cutoff distance
             if 1000 * hav(s1.lon, s1.lat, s2.lon, s2.lat) >= fb.cutoff:
                 log.info("Distance %d greater than the cutoff distance %s",
@@ -89,13 +92,26 @@ def makeHandler(fb, model, log):
             else:
                 feat = fb.get_feature_vec(s1, s2)
 
+                if int(pars.get("featvec", 0)):
+                    for feat_name in fb.features:
+                        json_features[feat_name] = int(feat[0, fb.get_feat_idx(feat_name)])
+
+                    for i in range(fb.num_pos_pairs):
+                        json_features["x" + str(i)] = int(feat[0, len(fb.features) + i * 2])
+                        json_features["y" + str(i)] = int(feat[0, len(fb.features) + i * 2 + 1])
+
+                    for i, ngram in enumerate(fb.get_top_ngrams()):
+                        a = feat[0, len(fb.features) + fb.num_pos_pairs * 2 + i]
+                        if a != 0:
+                            json_features[ngram] = int(a)
+
                 res = model.predict_proba(feat)
 
             self.send_response(200)
             self.send_header('Content-type', 'application/javascript')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            content = "{\"res\": " + str(res[0][1]) + "}"
+            content = "{\"res\": " + str(res[0][1]) + ", \"featvec\" :" + json.dumps(json_features) + "}"
             self.wfile.write(bytes(content, "utf8"))
 
         def log_message(self, format, *args):

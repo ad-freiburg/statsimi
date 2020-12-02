@@ -183,6 +183,9 @@ class ModelBuilder(object):
                 y_train = y
                 X_test = np.empty(shape=(0, X.shape[1]))
                 y_test = np.empty(shape=(0, 0))
+
+                train_idx = np.arange(X.shape[0])
+                test_idx = np.empty(shape=(0, 0))
             else:
                 X_train, X_test, y_train, y_test, train_idx, test_idx = \
                     train_test_split(X, y, ind, train_size=p, random_state=0)

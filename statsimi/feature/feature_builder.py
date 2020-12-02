@@ -396,8 +396,8 @@ class FeatureBuilder(object):
 
                     self.log.warning(
                         "Filtering out suspicious station group %d "
-                         "(osm rel id %d), is this an erroneously tagged "
-                         "transit route?" % (gid, group.osm_rel_id))
+                        "(osm rel id %d), is this an erroneously tagged "
+                        "transit route?" % (gid, group.osm_rel_id))
                     group.stats = []
                     break
 
@@ -433,6 +433,7 @@ class FeatureBuilder(object):
                         d = self.dist(st1, st2)
                         self.dists.append(d)
                     self.write_row(sid1, sid2, st1, st2, True, data, ind, iptr)
+                    self.write_row(sid2, sid1, st2, st1, True, data, ind, iptr)
 
                 if not group1.osm_rel_id and not self.force_orphans:
                     # dont negative-match orphan groups with any other group,
@@ -640,13 +641,19 @@ class FeatureBuilder(object):
         merged = self.diffmerge(topgramss1, topgramss2)
 
         for id, diff in merged:
-            diff = self.oflow(
-                abs(diff), st1, st2, 255, "qgram difference count")
+            # diffmat = abs(diff)
+            # don't take the absolute value, but encode the negative number in a 8 bit unsigned integer to keep information about the "direction" of missing qgrams (whether a qgram is missing on the left, or on the right)
+            # with the absolute value, the ngram part in the feature vector for
+            # e.g. "Hauptbahnhof Hbf" vs. "" is nearly the same as for
+            # "Hauptbahnhof" vs. "Hbf".
+            diffmat = diff % 256
+            diffmat = self.oflow(
+                diffmat, st1, st2, 255, "qgram difference count")
 
-            if diff > 0:
+            if diffmat != 0:
                 ind.append(self.num_feats +
                            int(self.top_ngrams_map[id]))
-                data.append(diff)
+                data.append(diffmat)
 
         if match:
             ind.append(self.num_feats + len(self.top_ngrams))
@@ -656,7 +663,10 @@ class FeatureBuilder(object):
 
         if sid1 is not None and sid2 is not None:
             # write pair to store
-            if st2.spice_id is not None:
+            if st1.spice_id is not None:
+                # the second station is a spiced one
+                self._pairs.append((st1.spice_id, sid2))
+            elif st2.spice_id is not None:
                 # the second station is a spiced one
                 self._pairs.append((sid1, st2.spice_id))
             else:
@@ -701,7 +711,7 @@ class FeatureBuilder(object):
                 ret.append(l1[i])
                 i += 1
             else:
-                ret.append(l2[j])
+                ret.append((l2[j][0], -l2[j][1]))
                 j += 1
 
         while i < len(l1):
@@ -709,7 +719,7 @@ class FeatureBuilder(object):
             i += 1
 
         while j < len(l2):
-            ret.append(l2[j])
+            ret.append((l2[j][0], -l2[j][1]))
             j += 1
 
         return ret
@@ -833,6 +843,7 @@ class FeatureBuilder(object):
                 matched[sid1].add(sid2)
 
                 self.write_row(sid1, sid2, st1, st2, False, data, ind, iptr)
+                self.write_row(sid2, sid1, st2, st1, False, data, ind, iptr)
                 count += 1
 
     def prepare_features(self):
