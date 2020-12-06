@@ -161,6 +161,11 @@ def main():
         help='Port the HTTP server will listen on'
     )
 
+    parser.add_argument(
+        '--http_js_cfg', type=str, default=None,
+        help='JS configuration file for web server'
+    )
+
     args = parser.parse_args()
 
     test_data = None
@@ -287,7 +292,7 @@ def main():
         y_test = tm[:, -1].toarray().ravel()
         X_test = tm[:, :-1]
         test_idx = None
-    else:
+    elif args.p < 1 and len(args.train) > 0:
         logging.info("Using remaining %.1f%% of '%s' as test dataset.", (1 - args.p) * 100, ", ".join(args.train))
 
 
@@ -336,7 +341,7 @@ def main():
 
         fb = FeatureBuilder(bbox=None, **fbargs)
 
-        serv = ClassifierServer(args.http_port, fb, model)
+        serv = ClassifierServer(args.http_port, fb, model, args.http_js_cfg)
         serv.run()
 
 

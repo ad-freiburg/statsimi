@@ -15,13 +15,13 @@ function classify(labelA, labelB, posA, posB) {
         }
     };
 
-    xmlhttp.open("GET", "/api?name1=" + labelA + "&name2=" + labelB + "&lat1=" + posA.lat + "&lon1=" + posA.lng + "&lat2=" + posB.lat + "&lon2=" + posB.lng, true);
+    xmlhttp.open("GET", "api?name1=" + labelA + "&name2=" + labelB + "&lat1=" + posA.lat + "&lon1=" + posA.lng + "&lat2=" + posB.lat + "&lon2=" + posB.lng, true);
     xmlhttp.send();
 }
 
 var map = L.map('map', {
   renderer: L.canvas()
-}).setView([48.00210, 7.81997], 18);
+});
 
 
 L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png', {
@@ -37,7 +37,7 @@ function makeDraggable(popup) {
   L.DomUtil.setPosition(popup._wrapper.parentNode, pos);
   var draggable = new L.Draggable(popup._container, popup._wrapper);
   draggable.enable();
-  
+
   draggable.on('dragend', function() {
     var pos = map.layerPointToLatLng(this._newPos);
     popup.setLatLng(pos);
@@ -117,5 +117,6 @@ function openStat(latlng, label) {
 
 map.on('click', function(pos) { openStat(pos.latlng, "Main Station"); });
 
-openStat(L.latLng(48.00199, 7.81989), "Freiburg im Breisgau, Bissierstr.");
-openStat(L.latLng(48.00223, 7.82006), "Freiburg Bissierstraße");
+map.setView(config.center, config.zoom);
+openStat(L.latLng(config.station1.lat, config.station1.lon), config.station1.name);
+openStat(L.latLng(config.station2.lat, config.station2.lon), config.station2.name);

@@ -16,7 +16,7 @@ from statsimi.feature.stat_ident import StatIdent
 HOST_NAME = '0.0.0.0'
 
 
-def makeHandler(fb, model, log):
+def makeHandler(fb, model, log, webdir, cfg):
     class ClassifierHandler(BaseHTTPRequestHandler):
         def do_GET(self):
             try:
@@ -42,8 +42,6 @@ def makeHandler(fb, model, log):
                     pass
 
         def handle_file_req(self):
-            webdir = os.path.join(os.path.dirname(__file__), 'web')
-
             if self.path == '/':
                 with open(os.path.join(webdir, "index.html")) as f:
                     self.send_response(200)
@@ -52,6 +50,12 @@ def makeHandler(fb, model, log):
                     content = f.read()
                     self.end_headers()
                     self.wfile.write(bytes(content, "utf8"))
+            elif self.path == '/cfg.js':
+                    self.send_response(200)
+                    self.send_header('Content-type', 'application/javascript')
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.end_headers()
+                    self.wfile.write(bytes(cfg, "utf8"))
             elif self.path == '/script.js':
                 with open(os.path.join(webdir, "script.js")) as f:
                     self.send_response(200)
@@ -120,15 +124,22 @@ def makeHandler(fb, model, log):
 
 
 class ClassifierServer(object):
-    def __init__(self, port, feature_builder, model):
+    def __init__(self, port, feature_builder, model, cfgfile=None):
+        self.webdir = os.path.join(os.path.dirname(__file__), 'web')
+        if cfgfile == None:
+            cfgfile = os.path.join(self.webdir, 'default.cfg')
+
         self.port = port
         self.fb = feature_builder
         self.model = model
 
+        with open(cfgfile) as f:
+            self.cfg = f.read()
+
         self.log = logging.getLogger('classserv')
 
     def run(self):
-        hndl = makeHandler(self.fb, self.model, self.log)
+        hndl = makeHandler(self.fb, self.model, self.log, self.webdir, self.cfg)
         hndl.server_version = "statsimi"
         hndl.sys_version = ""
         httpd = HTTPServer((HOST_NAME, self.port), hndl)

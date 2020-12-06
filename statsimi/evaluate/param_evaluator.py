@@ -49,6 +49,10 @@ class ParamEvaluator(object):
         self.norm_file = norm_file
         self.trainfiles = trainfiles
         self.testfiles = testfiles
+        if not self.trainfiles:
+            self.trainfiles = []
+        if not self.testfiles:
+            self.testfiles = []
         self.modelargs = modelargs
         self.fbargs = fbargs
         self.fbtestargs = fbtestargs

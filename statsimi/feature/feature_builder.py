@@ -4,7 +4,6 @@ Copyright 2019, University of Freiburg.
 Chair of Algorithms and Data Structures.
 '''
 
-# dont use X backend for matplotlib rendering
 import string
 import os
 import copy

@@ -135,7 +135,7 @@ class OsmFixer(object):
         for osm_rel_id, osm_rel in self.osm_relations.items():
             self.update_osm_relation(osm_rel_id, osm_rel)
 
-    def update_osm_relation(self, osm_rel_id, osm_rel):
+    def update_osm_relation(self, osm_rel_id, osm_rel, verbose=False):
         if len(osm_rel["name_stations"]) == 0:
             # no name stations, there was no name attribute for this
             # relations
@@ -656,7 +656,7 @@ class OsmFixer(object):
 
     def name_is_tracknum(self, name):
         '''
-        this is a heuristic to catch track numbers in name attributes,
+        This is a heuristic to catch track numbers in name attributes,
         a common mistake in OSM (track numbers should go into ref or local_ref,
         the name attribute should contain the name of the station, see
         e.g https://wiki.openstreetmap.org/wiki/Tag:public%20transport=platform)
