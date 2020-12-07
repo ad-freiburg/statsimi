@@ -19,7 +19,7 @@ class Normalizer(object):
         '''
         >>> n = Normalizer("testdata/test.rules")
         >>> len(n.chain)
-        110
+        120
         '''
 
         self.log = logging.getLogger('normzer')
@@ -66,16 +66,34 @@ class Normalizer(object):
     def normalize_string(self, a):
         '''
         >>> n = Normalizer("testdata/test.rules")
+        >>> n.normalize_string("Hbf Freiburg")
+        'freiburg hauptbahnhof'
+        >>> n.normalize_string("Hbf, Freiburg")
+        'freiburg hauptbahnhof'
         >>> n.normalize_string("Freiburg,    Hbf")
         'freiburg hauptbahnhof'
-        >>> n.normalize_string("Freiburg,    Hbf   ")
+        >>> n.normalize_string("Freiburg,   Hbf   ")
         'freiburg hauptbahnhof'
-        >>> n.normalize_string("Freiburg,    Hbf Gleis 5")
+        >>> n.normalize_string("Freiburg, Hbf Gleis 5 ")
         'freiburg hauptbahnhof'
+        >>> n.normalize_string("Freiburg,  Hbf Gleis 5,U + S ")
+        'freiburg hauptbahnhof'
+        >>> n.normalize_string("Zürich HB")
+        'zuerich hauptbahnhof'
+        >>> n.normalize_string("Liestal Bf")
+        'liestal bahnhof'
+        >>> n.normalize_string("Laßbergstraße Freiburg im Breisgau")
+        'lassberg strasse freiburg breisgau'
+        >>> n.normalize_string("Laßbergstraße Freiburg i. Breisgau")
+        'lassberg strasse freiburg breisgau'
+        >>> n.normalize_string("Laßbergstr. Freiburg(Breisgau)")
+        'lassberg strasse freiburg breisgau'
+        >>> n.normalize_string("Laßbergstr. Freiburg ( Breisgau)")
+        'lassberg strasse freiburg breisgau'
         >>> n.normalize_string("Freibürg; Teststr.+Testav.  ")
-        'freibuerg test street and testavenue'
+        'freibuerg test strasse test avenue'
         >>> n.normalize_string("Freibürg; Test str.+Testav.  ")
-        'freibuerg test street and testavenue'
+        'freibuerg test strasse test avenue'
         '''
         orig = a
         for rule in self.chain:
