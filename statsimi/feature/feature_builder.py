@@ -234,6 +234,9 @@ class FeatureBuilder(object):
             sid2 = pair[1]
             st1 = self._stats[sid1]
             st2 = self._stats[sid2]
+            # don't use empty names, as they might occur with normalization
+            if len(st1.name) == 0 or len(st2.name) == 0:
+                continue
             matched = simi[i]
             self.write_row(sid1, sid2, st1, st2, matched, data, ind, iptr)
 
@@ -426,8 +429,12 @@ class FeatureBuilder(object):
                 # self matches, we also always write them for orphan groups
                 for id2, sid2 in enumerate(group1.stats[id1:]):
                     st2 = self._stats[sid2]
+
+                    # don't use empty names, as they might occur with
+                    # normalization
                     if len(st1.name) == 0 or len(st2.name) == 0:
                         continue
+
                     if sid1 != sid2 and st1.osmnid != st2.osmnid:
                         d = self.dist(st1, st2)
                         self.dists.append(d)
