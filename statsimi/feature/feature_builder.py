@@ -438,6 +438,17 @@ class FeatureBuilder(object):
                     if sid1 != sid2 and st1.osmnid != st2.osmnid:
                         d = self.dist(st1, st2)
                         self.dists.append(d)
+
+                    # spice with probability p
+                    if self.spice > 0 and random.uniform(0, 1) <= self.spice:
+                        # add some random gaussian noise to the second station
+                        # to simulate precision problems
+                        st2 = copy.copy(self._stats[sid2])
+                        st2.lon = st1.lon + random.gauss(0, 0.0005)
+                        st2.lat = st1.lat + random.gauss(0, 0.0005)
+                        st2.spice_id = len(self._stats)
+                        self._stats.append(st2)
+
                     self.write_row(sid1, sid2, st1, st2, True, data, ind, iptr)
                     self.write_row(sid2, sid1, st2, st1, True, data, ind, iptr)
 
