@@ -119,11 +119,18 @@ class ParamEvaluator(object):
 
         precs_tp, recs_tp, f1s_tp, _ = precision_recall_fscore_support(y_test, y_pred, average=None, labels=[0, 1])
 
-        p_neg[run], r_neg[run], f1_neg[run] = precs_tp[0], recs_tp[0], f1s_tp[0]
-        p_pos[run], r_pos[run], f1_pos[run] = precs_tp[1], recs_tp[1], f1s_tp[1]
+        p_neg[run].append(precs_tp[0])
+        r_neg[run].append(recs_tp[0])
+        f1_neg[run].append(f1s_tp[0])
+
+        p_pos[run].append(precs_tp[1])
+        r_pos[run].append(recs_tp[1])
+        f1_pos[run].append(f1s_tp[1])
 
         # macro averaged
-        precs[run], recs[run], f1s[run] = (p_neg[run] + p_pos[run]) / 2, (r_neg[run] + r_pos[run]) / 2, (f1_neg[run] + f1_pos[run]) / 2
+        precs[run].append(np.average(precs_tp))
+        recs[run].append(np.average(recs_tp))
+        f1s[run].append(np.average(f1s_tp))
 
         conf_ms[run].append(confusion_matrix(y_test, y_pred, labels=[0, 1]))
 
