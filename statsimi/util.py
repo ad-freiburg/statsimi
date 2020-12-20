@@ -525,7 +525,6 @@ def print_classification_report(*args, digits=5):
         print()
     print(flush=True)
 
-
 def print_confusion_matrix(y_test, y_pred):
     # Based on https://gist.github.com/zachguo/10296432
     mat = confusion_matrix(y_test, y_pred)

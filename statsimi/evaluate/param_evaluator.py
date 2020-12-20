@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
+from sklearn.metrics import precision_recall_fscore_support
 from sklearn.metrics import f1_score
 from statsimi.feature.model_builder import ModelBuilder
 from statsimi.util import print_classification_report
@@ -116,19 +117,15 @@ class ParamEvaluator(object):
 
         y_pred = model.predict(**pick_args(model.predict, args))
 
-        precs[run].append(precision_score(y_test, y_pred, average='macro'))
-        recs[run].append(recall_score(y_test, y_pred, average='macro'))
-        f1s[run].append(f1_score(y_test, y_pred, average='macro'))
+        precs_tp, recs_tp, f1s_tp, _ = precision_recall_fscore_support(y_test, y_pred, average=None, labels=[0, 1])
 
-        p_neg[run].append(precision_score(y_test, y_pred, average=None)[0])
-        r_neg[run].append(recall_score(y_test, y_pred, average=None)[0])
-        f1_neg[run].append(f1_score(y_test, y_pred, average=None)[0])
+        p_neg[run], r_neg[run], f1_neg[run] = precs_tp[0], recs_tp[0], f1s_tp[0]
+        p_pos[run], r_pos[run], f1_pos[run] = precs_tp[1], recs_tp[1], f1s_tp[1]
 
-        p_pos[run].append(precision_score(y_test, y_pred, average=None)[1])
-        r_pos[run].append(recall_score(y_test, y_pred, average=None)[1])
-        f1_pos[run].append(f1_score(y_test, y_pred, average=None)[1])
+        # macro averaged
+        precs[run], recs[run], f1s[run] = (p_neg[run] + p_pos[run]) / 2, (r_neg[run] + r_pos[run]) / 2, (f1_neg[run] + f1_pos[run]) / 2
 
-        conf_ms[run].append(confusion_matrix(y_test, y_pred))
+        conf_ms[run].append(confusion_matrix(y_test, y_pred, labels=[0, 1]))
 
         if run == self.runs - 1:
             # during last run, print the avg classification report
