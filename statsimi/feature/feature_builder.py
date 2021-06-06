@@ -703,15 +703,20 @@ class FeatureBuilder(object):
     def dist(self, s1, s2):
         if s1.lat is not None and s2.lat is not None:
             if self.cutoff < 500000:
-                mdist = int(1000 * hav_approx(s1.lon, s1.lat, s2.lon, s2.lat))
+                mdist = int(min(1000 * 50000.0,
+                    1000 * hav_approx(s1.lon, s1.lat, s2.lon, s2.lat)))
             else:
-                mdist = int(1000 * hav(s1.lon, s1.lat, s2.lon, s2.lat))
+                mdist = int(min(1000 * 50000.0,
+                    1000 * hav(s1.lon, s1.lat, s2.lon, s2.lat)))
         elif s1.lat is not None:
-            mdist = int(1000 * hav_approx_poly_stat(s2.poly, s1.lon, s1.lat))
+            mdist = int(min(1000 * 50000.0,
+                1000 * hav_approx_poly_stat(s2.poly, s1.lon, s1.lat)))
         elif s2.lat is not None:
-            mdist = int(1000 * hav_approx_poly_stat(s1.poly, s2.lon, s2.lat))
+            mdist = int(min(1000 * 50000.0,
+                1000 * hav_approx_poly_stat(s1.poly, s2.lon, s2.lat)))
         else:
-            mdist = int(1000 * hav_approx_poly_poly(s1.poly, s2.poly))
+            mdist = int(min(1000 * 50000.0,
+                1000 * hav_approx_poly_poly(s1.poly, s2.poly)))
         return mdist
 
     def diffmerge(self, l1, l2):
