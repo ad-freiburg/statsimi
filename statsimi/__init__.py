@@ -14,6 +14,7 @@ from .serv.classifier_server import ClassifierServer
 import argparse
 import time
 import logging
+import faulthandler
 FORMAT = "[%(asctime)-15s] (%(name)-8s) %(levelname)-8s: %(message)s"
 logging.basicConfig(level=logging.INFO, format=FORMAT)
 
@@ -22,6 +23,7 @@ class ArgFormat(argparse.ArgumentDefaultsHelpFormatter,
                 argparse.RawDescriptionHelpFormatter):
     pass
 
+faulthandler.enable()
 
 def main():
     start = time.time()
