@@ -15,6 +15,7 @@ import argparse
 import time
 import logging
 import faulthandler
+import gc
 FORMAT = "[%(asctime)-15s] (%(name)-8s) %(levelname)-8s: %(message)s"
 logging.basicConfig(level=logging.INFO, format=FORMAT)
 
@@ -290,13 +291,16 @@ def main():
         fbargs["topk"] = len(ngram_model[2])  # re-use the top k
 
         test_data = mb.build_from_file(args.test, fbargs=fbargs)
-        tm = test_data.get_matrix()
-        y_test = tm[:, -1].toarray().ravel()
-        X_test = tm[:, :-1]
+        if args.cmd[0] == "evaluate" or args.pairs_test_out is not None:
+            tm = test_data.get_matrix()
+            y_test = tm[:, -1].toarray().ravel()
+            X_test = tm[:, :-1]
         test_idx = None
+
+        gc.collect()
+
     elif args.p < 1 and len(args.train) > 0:
         logging.info("Using remaining %.1f%% of '%s' as test dataset.", (1 - args.p) * 100, ", ".join(args.train))
-
 
     # write train pairs file
     if args.pairs_train_out is not None:

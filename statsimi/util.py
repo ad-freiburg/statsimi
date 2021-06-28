@@ -587,7 +587,8 @@ class FileList(object):
         self.file.seek(0)
 
     def __del__(self):
-        self.file.close()
+        if not self.file.closed:
+            self.file.close()
         os.remove(self.fname)
 
     def __len__(self):
@@ -595,10 +596,11 @@ class FileList(object):
 
     def append(self, i):
         self.file.write((i).to_bytes(self.w, byteorder=sys.byteorder))
-        self.size = self.size + 1
+        self.size += 1
 
     def get_mmap(self):
         self.file.flush()
+        os.fsync(self.file)
         code = (sys.byteorder == 'little') and '<' or '>'
-        return np.memmap(self.fname, dtype=code + "i" +
+        return np.memmap(self.fname, dtype=code + "u" +
                          str(self.w), mode='r', shape=(self.size))

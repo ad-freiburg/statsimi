@@ -8,6 +8,7 @@ Patrick Brosi <brosi@informatik.uni-freiburg.de>
 from statsimi.feature.stat_group import StatGroup
 from itertools import repeat
 import numpy as np
+from scipy.sparse import csr_matrix
 import logging
 import re
 from timeit import default_timer as timer
@@ -52,6 +53,7 @@ class OsmFixer(object):
         tm = self.features.get_matrix()
         y_input = tm[:, -1].toarray().ravel()
         X_input = tm[:, :-1]
+
 
         if getattr(model, "set_lookup_idx", None):
             model.set_lookup_idx(self.test_idx)
@@ -331,7 +333,7 @@ class OsmFixer(object):
                         osm_st["target_group_id"] = target_gid
                     else:
                         # ... and the new group is a non-osm group ...
-                        if len(target_gr.stations):
+                        if len(target_gr.stats):
                             # ... which is NOT an orphan group.
                             #  print("SUGG: Move %d to new relation of group %d" %
                                   #  (osm_nd_id, target_gid))
