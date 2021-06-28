@@ -11,6 +11,7 @@ import numpy as np
 from scipy.sparse import csr_matrix
 import logging
 import re
+import gc
 from timeit import default_timer as timer
 
 class OsmFixer(object):
@@ -52,13 +53,39 @@ class OsmFixer(object):
 
         tm = self.features.get_matrix()
         y_input = tm[:, -1].toarray().ravel()
-        X_input = tm[:, :-1]
+        y_proba = None
+        X_input = None
 
+        i = 0
+        chunk_size = 5000000
 
-        if getattr(model, "set_lookup_idx", None):
-            model.set_lookup_idx(self.test_idx)
+        if not getattr(model, "set_lookup_idx", None):
+            # split into chunks to avoid memory issues
 
-        y_proba = model.predict_proba(X_input)
+            while True:
+                chunk = tm[i:i+chunk_size,:-1]
+                i += chunk_size
+
+                if chunk.shape[0] == 0:
+                    break
+
+                y_proba_local = model.predict_proba(chunk)
+                if y_proba is None:
+                    y_proba = y_proba_local
+                else:
+                    y_proba = np.append(y_proba, y_proba_local, axis=0)
+
+                gc.collect()
+
+            gc.collect()
+
+            X_input  = tm[:,:-1]
+        else:
+            X_input  = tm[:,:-1]
+            if getattr(model, "set_lookup_idx", None):
+                model.set_lookup_idx(self.test_idx)
+
+            y_proba = model.predict_proba(X_input)
 
         # make sure both classes are present in the y_proba, even
         # if only one occurred in the training data
