@@ -54,10 +54,11 @@ class OsmFixer(object):
         tm = self.features.get_matrix()
         y_input = tm[:, -1].toarray().ravel()
         y_proba = None
+        y_proba_old = None
         X_input = None
 
         i = 0
-        chunk_size = 5000000
+        chunk_size = 1000000
 
         if not getattr(model, "set_lookup_idx", None):
             # split into chunks to avoid memory issues
@@ -69,21 +70,21 @@ class OsmFixer(object):
                 if chunk.shape[0] == 0:
                     break
 
+                self.log.info("Analyzing chunk of size %d" % (chunk.shape[0]))
                 y_proba_local = model.predict_proba(chunk)
+                chunk = None
                 if y_proba is None:
                     y_proba = y_proba_local
                 else:
                     y_proba = np.append(y_proba, y_proba_local, axis=0)
+                y_proba_local = None
 
                 gc.collect()
 
             gc.collect()
-
-            X_input  = tm[:,:-1]
         else:
             X_input  = tm[:,:-1]
-            if getattr(model, "set_lookup_idx", None):
-                model.set_lookup_idx(self.test_idx)
+            model.set_lookup_idx(self.test_idx)
 
             y_proba = model.predict_proba(X_input)
 
