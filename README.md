@@ -1,5 +1,4 @@
-[![Build
-Status](https://travis-ci.org/ad-freiburg/statsimi.svg?branch=master)](https://travis-ci.org/ad-freiburg/statsimi)
+[![Build](https://github.com/ad-freiburg/statsimi/actions/workflows/build.yml/badge.svg)](https://github.com/ad-freiburg/statsimi/actions/workflows/build.yml)
 
 # statsimi
 
