@@ -489,11 +489,12 @@ class FeatureBuilder(object):
                 group_nums_aggr += stations_in_group
                 group_num += 1
 
-        self.log.info("Average distance between matching pairs is %.2f"
-                      % mean(self.dists))
+        if (len(self.dists) > 0):
+            self.log.info("Average distance between matching pairs is %.2f"
+                          % mean(self.dists))
 
-        self.log.info("Median distance between matching pairs is %.2f"
-                      % median(self.dists))
+            self.log.info("Median distance between matching pairs is %.2f"
+                          % median(self.dists))
 
         self.log.info("Average number of station identifiers per group is %.2f"
                       % (group_nums_aggr / group_num))
