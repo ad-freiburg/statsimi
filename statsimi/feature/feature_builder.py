@@ -363,9 +363,9 @@ class FeatureBuilder(object):
 
         # the matrix is stored on the hard disk to safe memory
         # FileList is the backing array
-        ind = FileList(16, ".indices" + rand)
+        ind = FileList(32, ".indices" + rand)
         data = FileList(8, ".data" + rand)
-        iptr = FileList(32, ".indptr" + rand)
+        iptr = FileList(64, ".indptr" + rand)
         iptr.append(0)
 
         return ind, data, iptr
